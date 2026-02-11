@@ -6,10 +6,38 @@ import type { User } from '@supabase/supabase-js';
 
 export function useAnonymousUser() {
   const [user, setUser] = useState<User | null>(null);
+  const [customUserId, setCustomUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for existing session
+    // Check for custom user ID in URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlUserId = urlParams.get('id');
+
+    if (urlUserId) {
+      // Use custom user ID from URL
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🆔 Using custom user ID from URL:', urlUserId);
+      }
+      // Store in localStorage to persist across sessions
+      localStorage.setItem('customUserId', urlUserId);
+      setCustomUserId(urlUserId);
+      setLoading(false);
+      return;
+    }
+
+    // Check for stored custom user ID
+    const storedCustomUserId = localStorage.getItem('customUserId');
+    if (storedCustomUserId) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🆔 Using stored custom user ID:', storedCustomUserId);
+      }
+      setCustomUserId(storedCustomUserId);
+      setLoading(false);
+      return;
+    }
+
+    // Fallback to anonymous auth if no custom ID
     const initAuth = async () => {
       try {
         if (process.env.NODE_ENV === 'development') {
@@ -54,5 +82,8 @@ export function useAnonymousUser() {
     };
   }, []);
 
-  return { user, userId: user?.id, loading };
+  // Return custom user ID if available, otherwise use Supabase user ID
+  const finalUserId = customUserId || user?.id;
+
+  return { user, userId: finalUserId, loading };
 }
