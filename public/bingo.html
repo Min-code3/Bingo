@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>오사카 여행 빙고</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --red:#B91C1C;--dark-red:#7F1D1D;--gold:#D4A574;--gold-light:#F5E6D0;
+  --cream:#F5F0E8;--paper:#FAF7F2;--dark:#1C1917;
+}
+body{
+  font-family:'Noto Serif KR','Georgia',serif;
+  background:var(--cream);
+  background-image:repeating-linear-gradient(45deg,transparent,transparent 10px,rgba(139,69,19,0.02) 10px,rgba(139,69,19,0.02) 11px);
+  color:var(--dark);min-height:100vh;display:flex;
+}
+
+/* === SIDEBAR === */
+.sidebar{
+  width:220px;background:var(--dark-red);color:#fff;
+  padding:20px 14px;display:flex;flex-direction:column;gap:20px;min-height:100vh;
+}
+.sidebar h1{font-size:1.3rem;text-align:center;border-bottom:2px solid var(--gold);padding-bottom:14px;}
+.sidebar nav{display:flex;flex-direction:column;gap:6px;}
+.nav-btn{
+  padding:10px 14px;border:2px solid var(--gold);background:transparent;color:#fff;
+  font-family:inherit;font-size:0.9rem;cursor:pointer;border-radius:4px;transition:all .3s;
+}
+.nav-btn.active{background:var(--gold);color:var(--dark);}
+.nav-btn:disabled{opacity:.4;cursor:not-allowed;}
+.progress-section{margin-top:auto;display:flex;flex-direction:column;gap:12px;}
+.progress-item{display:flex;flex-direction:column;gap:4px;}
+.progress-item span:first-child{font-size:.75rem;color:var(--gold);font-weight:700;}
+.progress-bar{height:6px;background:rgba(255,255,255,.15);border-radius:3px;overflow:hidden;}
+.progress-fill{height:100%;background:var(--gold);border-radius:3px;transition:width .5s;}
+.progress-label{font-size:.75rem;opacity:.8;}
+.reset-btn{
+  margin-top:12px;padding:8px;border:1px solid rgba(255,255,255,.3);background:transparent;
+  color:rgba(255,255,255,.6);font-family:inherit;font-size:.75rem;cursor:pointer;border-radius:4px;
+}
+.reset-btn:hover{border-color:#fff;color:#fff;}
+
+/* === MAIN CONTENT === */
+.main-content{flex:1;padding:28px;display:flex;flex-direction:column;align-items:center;overflow-y:auto;}
+.main-content h2{font-size:1.8rem;color:var(--dark-red);margin-bottom:4px;}
+.subtitle{color:#78716C;margin-bottom:20px;font-size:.85rem;}
+
+/* === VIEW TOGGLE === */
+.view{display:flex;flex-direction:column;align-items:center;width:100%;}
+.view.hidden{display:none;}
+.back-btn{
+  align-self:flex-start;padding:8px 14px;border:2px solid var(--red);background:transparent;
+  color:var(--red);font-family:inherit;font-size:.85rem;cursor:pointer;border-radius:4px;margin-bottom:14px;transition:all .3s;
+}
+.back-btn:hover{background:var(--red);color:#fff;}
+.food-status{
+  background:var(--gold-light);color:var(--dark-red);padding:8px 20px;border-radius:20px;
+  font-weight:700;font-size:.9rem;margin-bottom:16px;
+}
+
+/* === BINGO GRID === */
+.bingo-grid{display:grid;gap:8px;width:100%;max-width:480px;}
+.main-grid{
+  grid-template-columns:1fr 1fr 1fr;
+  grid-template-rows:1fr 1fr 1fr;
+  grid-template-areas:"c1 c2 c3""c4 food food""c7 food food";
+  aspect-ratio:1;
+}
+.food-grid{
+  grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);
+  max-width:420px;aspect-ratio:1;
+}
+
+/* === CELL === */
+.cell{perspective:800px;cursor:pointer;position:relative;}
+.cell[data-area="c1"]{grid-area:c1;}
+.cell[data-area="c2"]{grid-area:c2;}
+.cell[data-area="c3"]{grid-area:c3;}
+.cell[data-area="c4"]{grid-area:c4;}
+.cell[data-area="food"]{grid-area:food;}
+.cell[data-area="c7"]{grid-area:c7;}
+
+.card{
+  width:100%;height:100%;position:relative;
+  transform-style:preserve-3d;transition:transform .8s cubic-bezier(.4,0,.2,1);border-radius:8px;
+}
+.card.flipped{transform:rotateY(180deg);}
+
+.card-face{
+  position:absolute;inset:0;backface-visibility:hidden;border-radius:8px;overflow:hidden;
+  border:3px solid var(--red);display:flex;flex-direction:column;align-items:center;justify-content:center;
+}
+
+/* === CARD FRONT (placeholder) === */
+.card-front{background:var(--paper);}
+.card-front .cell-icon{font-size:2rem;margin-bottom:2px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.1));}
+.card-front .cell-label{font-weight:700;font-size:.95rem;color:var(--dark);text-align:center;}
+.card-front .cell-sublabel{font-size:.7rem;color:#78716C;margin-top:2px;}
+.card-front .cell-hint{font-size:.65rem;color:var(--red);margin-top:6px;opacity:.7;}
+
+/* === CARD BACK === */
+.card-back{transform:rotateY(180deg);background:var(--dark);}
+.card-back img{width:100%;height:100%;object-fit:cover;}
+
+/* === COMPLETED STATES === */
+.cell.completed .card-face{border-color:var(--gold);}
+.check-mark{
+  position:absolute;top:6px;right:6px;background:var(--gold);color:#fff;
+  width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:700;z-index:2;
+}
+.cell.bingo-line .card-face{box-shadow:0 0 0 3px var(--gold),0 0 15px rgba(212,165,116,.4);}
+
+/* === PIECE (hidden picture) === */
+.piece{width:100%;height:100%;background-color:#2d2d2d;}
+
+/* === FOOD MEGA CELL === */
+.food-mega-front{background:linear-gradient(135deg,#FEF3C7,#FDE68A) !important;border-color:var(--gold) !important;}
+.food-mega-front.completed{background:linear-gradient(135deg,#D4A574,#F5E6D0) !important;}
+
+/* === FOOD CELL BACK === */
+.food-piece-back{
+  width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,var(--dark-red),#4a1010);
+}
+.food-piece-back .emoji{font-size:2rem;margin-bottom:4px;}
+.food-piece-back .fname{color:var(--gold);font-size:.75rem;font-weight:700;}
+
+/* === MODAL === */
+.modal-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;
+  align-items:center;justify-content:center;
+}
+.modal-overlay.active{display:flex;}
+.modal-card{
+  background:var(--paper);border:3px solid var(--red);border-radius:12px;
+  padding:28px;max-width:380px;width:90%;text-align:center;
+}
+.modal-card h3{color:var(--dark-red);margin-bottom:4px;font-size:1.2rem;}
+.modal-subtitle{color:#78716C;font-size:.8rem;margin-bottom:16px;}
+.upload-area{margin-bottom:16px;}
+.upload-area input[type="file"]{display:none;}
+.upload-label{
+  display:inline-block;padding:12px 24px;border:2px dashed var(--red);border-radius:8px;
+  color:var(--red);cursor:pointer;font-family:inherit;font-size:.9rem;transition:all .3s;
+}
+.upload-label:hover{background:rgba(185,28,28,.05);}
+.preview-img{max-width:100%;max-height:180px;border-radius:8px;margin-bottom:16px;}
+.modal-buttons{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;}
+.btn{
+  padding:10px 18px;border:2px solid var(--red);font-family:inherit;font-size:.85rem;
+  cursor:pointer;border-radius:6px;transition:all .3s;
+}
+.btn-upload{background:var(--red);color:#fff;}
+.btn-upload:disabled{opacity:.4;cursor:not-allowed;}
+.btn-dummy{background:var(--gold);color:var(--dark);border-color:var(--gold);}
+.btn-cancel{background:transparent;color:var(--dark);}
+
+/* === PICTURE OVERLAY === */
+.picture-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;
+  align-items:center;justify-content:center;flex-direction:column;
+}
+.picture-overlay.active{display:flex;}
+.picture-container{text-align:center;}
+.picture-container h2{color:var(--gold);font-size:1.5rem;margin-bottom:12px;}
+.picture-grid{
+  display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:1fr 1fr 1fr;
+  grid-template-areas:"p1 p2 p3""p4 pf pf""p7 pf pf";
+  width:300px;height:300px;gap:3px;margin:0 auto;
+}
+.picture-cell{border-radius:4px;overflow:hidden;position:relative;}
+.picture-cell.locked{background:#1a1a1a;}
+.picture-cell.locked::after{
+  content:'🔒';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:1.2rem;opacity:.4;
+}
+.picture-cell.revealed .piece{width:100%;height:100%;}
+
+/* === NOTIFICATION === */
+.notification{
+  position:fixed;top:20px;right:20px;background:var(--gold);color:var(--dark);
+  padding:14px 22px;border-radius:8px;font-weight:700;font-size:1rem;z-index:300;
+  box-shadow:0 4px 20px rgba(0,0,0,.3);animation:slideIn .5s ease;
+}
+@keyframes slideIn{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+.picture-btn{
+  margin-top:20px;padding:10px 20px;border:2px solid var(--dark-red);background:transparent;
+  color:var(--dark-red);font-family:inherit;font-size:.85rem;cursor:pointer;border-radius:6px;transition:all .3s;
+}
+.picture-btn:hover{background:var(--dark-red);color:#fff;}
+
+/* === CELEBRATION === */
+.celebration{
+  position:fixed;inset:0;z-index:250;display:none;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.8);flex-direction:column;gap:16px;
+}
+.celebration.active{display:flex;}
+.celebration h2{color:var(--gold);font-size:2rem;}
+.celebration p{color:#fff;font-size:1rem;}
+
+/* === RESPONSIVE === */
+@media(max-width:768px){
+  body{flex-direction:column;}
+  .sidebar{
+    width:100%;min-height:auto;flex-direction:row;padding:10px 14px;align-items:center;gap:10px;
+  }
+  .sidebar h1{font-size:1rem;border-bottom:none;padding-bottom:0;white-space:nowrap;}
+  .sidebar nav{flex-direction:row;gap:4px;}
+  .nav-btn{padding:6px 10px;font-size:.75rem;}
+  .progress-section,.reset-btn{display:none;}
+  .main-content{padding:16px;}
+  .main-content h2{font-size:1.4rem;}
+  .bingo-grid{gap:6px;}
+  .card-front .cell-icon{font-size:1.5rem;}
+  .card-front .cell-label{font-size:.75rem;}
+  .card-front .cell-sublabel,.card-front .cell-hint{font-size:.6rem;}
+  .mobile-progress{
+    display:flex !important;gap:12px;margin-bottom:12px;font-size:.75rem;color:var(--dark-red);font-weight:700;
+  }
+}
+.mobile-progress{display:none;}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <h1>여행 빙고</h1>
+  <nav>
+    <button class="nav-btn active">오사카</button>
+    <button class="nav-btn" disabled>교토 (준비중)</button>
+  </nav>
+  <div class="progress-section">
+    <div class="progress-item">
+      <span>메인 진행</span>
+      <div class="progress-bar"><div class="progress-fill" id="mainProgress" style="width:0%"></div></div>
+      <span class="progress-label" id="mainLabel">0 / 6</span>
+    </div>
+    <div class="progress-item">
+      <span>빙고 라인</span>
+      <span class="progress-label" id="bingoLabel">0줄</span>
+    </div>
+    <div class="progress-item">
+      <span>숨겨진 그림</span>
+      <div class="progress-bar"><div class="progress-fill" id="picProgress" style="width:0%"></div></div>
+      <span class="progress-label" id="picLabel">0 / 9</span>
+    </div>
+  </div>
+  <button class="reset-btn" onclick="resetAll()">초기화</button>
+</aside>
+
+<main class="main-content">
+  <!-- Main Bingo View -->
+  <div id="mainView" class="view">
+    <h2>오사카 빙고</h2>
+    <p class="subtitle">명소를 방문하고 사진을 찍어 빙고를 완성하세요!</p>
+    <div class="mobile-progress" id="mobileProgress"></div>
+    <div class="bingo-grid main-grid" id="mainGrid"></div>
+    <button class="picture-btn" onclick="showPicture()">🖼️ 숨겨진 그림 보기</button>
+  </div>
+
+  <!-- Food Bingo View -->
+  <div id="foodView" class="view hidden">
+    <button class="back-btn" onclick="showMainView()">← 메인 빙고</button>
+    <h2>음식 빙고</h2>
+    <p class="subtitle">2줄 완성 시 메인 빙고의 음식칸이 자동 완성됩니다!</p>
+    <div class="food-status" id="foodStatus">완성된 줄: 0 / 2</div>
+    <div class="bingo-grid food-grid" id="foodGrid"></div>
+  </div>
+</main>
+
+<!-- Upload Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal-card">
+    <h3 id="modalTitle">사진 업로드</h3>
+    <p class="modal-subtitle" id="modalSub">사진을 업로드하세요</p>
+    <div class="upload-area">
+      <input type="file" accept="image/*" id="fileInput" onchange="onFileSelect(event)">
+      <label for="fileInput" class="upload-label">📷 사진 선택</label>
+    </div>
+    <img id="previewImg" class="preview-img" style="display:none">
+    <div class="modal-buttons">
+      <button class="btn btn-upload" id="uploadBtn" onclick="confirmUpload()" disabled>업로드</button>
+      <button class="btn btn-dummy" onclick="dummyUpload()">📸 업로드 취급</button>
+      <button class="btn btn-cancel" onclick="closeModal()">취소</button>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden Picture Overlay -->
+<div class="picture-overlay" id="pictureOverlay" onclick="closePicture()">
+  <div class="picture-container" onclick="event.stopPropagation()">
+    <h2>숨겨진 그림</h2>
+    <div class="picture-grid" id="pictureGrid"></div>
+    <button class="btn btn-cancel" onclick="closePicture()" style="margin-top:14px;color:#fff;border-color:#fff;">닫기</button>
+  </div>
+</div>
+
+<script>
+// ===== CONFIGURATION =====
+const MAIN_CELLS = [
+  {id:'wild',   label:'Wild',      sub:'자유사진',    icon:'🌸', area:'c1', grad:'linear-gradient(135deg,#FFB7C5,#FF85A2)', pp:'0% 0%',   ps:'300% 300%'},
+  {id:'umeda',  label:'우메다',     sub:'스카이빌딩',  icon:'🌃', area:'c2', grad:'linear-gradient(135deg,#1a1a2e,#0f3460)',  pp:'50% 0%',  ps:'300% 300%'},
+  {id:'osaka',  label:'오사카성',   sub:'',           icon:'🏯', area:'c3', grad:'linear-gradient(135deg,#f5af19,#f12711)',  pp:'100% 0%', ps:'300% 300%'},
+  {id:'glico',  label:'글리코상',   sub:'도톤보리',    icon:'🏃', area:'c4', grad:'linear-gradient(135deg,#ee0979,#ff6a00)',  pp:'0% 50%',  ps:'300% 300%'},
+  {id:'food',   label:'음식 빙고',  sub:'',           icon:'🍽️', area:'food',grad:'linear-gradient(135deg,#FEF3C7,#FDE68A)', pp:'100% 100%',ps:'150% 150%', mega:true},
+  {id:'tsuten', label:'츠텐카쿠',   sub:'',           icon:'🗼', area:'c7', grad:'linear-gradient(135deg,#00b4db,#0083b0)',  pp:'0% 100%', ps:'300% 300%'},
+];
+
+const FOOD_CELLS = [
+  {id:'f-wild',      label:'Wild',        sub:'자유 음식',    icon:'🍽️', grad:'linear-gradient(135deg,#ffd200,#f7971e)'},
+  {id:'f-pancake',   label:'팬케이크',     sub:'',            icon:'🥞', grad:'linear-gradient(135deg,#f5e6ca,#d4a56a)'},
+  {id:'f-takoyaki',  label:'타코야키',     sub:'',            icon:'🐙', grad:'linear-gradient(135deg,#c04848,#6a1b1b)'},
+  {id:'f-mochi',     label:'딸기모찌',     sub:'',            icon:'🍓', grad:'linear-gradient(135deg,#ff9a9e,#fad0c4)'},
+  {id:'f-gyukatsu',  label:'와규 규카츠',   sub:'',            icon:'🥩', grad:'linear-gradient(135deg,#8e2024,#4a0e10)'},
+  {id:'f-yakitori',  label:'야끼토리',     sub:'',            icon:'🍢', grad:'linear-gradient(135deg,#f7971e,#a84300)'},
+  {id:'f-sushi',     label:'스시',        sub:'',            icon:'🍣', grad:'linear-gradient(135deg,#ff6b6b,#ee5a24)'},
+  {id:'f-ramen',     label:'라멘',        sub:'',            icon:'🍜', grad:'linear-gradient(135deg,#f7e98e,#b8860b)'},
+  {id:'f-okonomiyaki',label:'오코노미야끼', sub:'',            icon:'🥘', grad:'linear-gradient(135deg,#8B6914,#654321)'},
+];
+
+const MAIN_LINES = [
+  ['wild','umeda','osaka'],
+  ['glico','food'],
+  ['tsuten','food'],
+  ['wild','glico','tsuten'],
+  ['umeda','food'],
+  ['osaka','food'],
+  ['wild','food'],
+  ['osaka','food','tsuten'],
+];
+
+const FOOD_LINES = [
+  [0,1,2],[3,4,5],[6,7,8],
+  [0,3,6],[1,4,7],[2,5,8],
+  [0,4,8],[2,4,6],
+];
+
+// ===== HIDDEN PICTURE SVG =====
+const HIDDEN_SVG = `<svg viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg">
+<defs><linearGradient id="s" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0%" stop-color="#1a0533"/><stop offset="20%" stop-color="#FF6B35"/>
+<stop offset="40%" stop-color="#FF8C42"/><stop offset="55%" stop-color="#FFD700"/>
+<stop offset="75%" stop-color="#87CEEB"/><stop offset="100%" stop-color="#4682B4"/>
+</linearGradient></defs>
+<rect width="600" height="600" fill="url(#s)"/>
+<circle cx="50" cy="30" r="2" fill="#fff" opacity=".7"/>
+<circle cx="150" cy="50" r="1.5" fill="#fff" opacity=".5"/>
+<circle cx="550" cy="40" r="2" fill="#fff" opacity=".6"/>
+<circle cx="420" cy="170" r="50" fill="#FF4500" opacity=".85"/>
+<circle cx="420" cy="170" r="35" fill="#FFD700" opacity=".6"/>
+<polygon points="0,480 120,300 240,420 360,310 480,380 600,280 600,600 0,600" fill="#2F4F4F" opacity=".4"/>
+<polygon points="120,600 300,220 480,600" fill="#4a5568"/>
+<polygon points="230,340 300,220 370,340" fill="#E8E8E8" opacity=".9"/>
+<rect x="0" y="490" width="600" height="110" fill="#1a365d" opacity=".5"/>
+<rect x="65" y="360" width="14" height="240" fill="#C41E3A" rx="3"/>
+<rect x="165" y="360" width="14" height="240" fill="#C41E3A" rx="3"/>
+<rect x="50" y="350" width="145" height="12" fill="#C41E3A" rx="4"/>
+<rect x="60" y="370" width="125" height="8" fill="#C41E3A" rx="2"/>
+<g fill="#FFB7C5" opacity=".85">
+<circle cx="520" cy="100" r="6"/><circle cx="540" cy="125" r="5"/><circle cx="500" cy="135" r="7"/>
+<circle cx="530" cy="75" r="4"/><circle cx="510" cy="160" r="5"/><circle cx="70" cy="100" r="5"/>
+<circle cx="90" cy="75" r="4"/><circle cx="50" cy="130" r="6"/><circle cx="110" cy="115" r="3"/>
+</g>
+<rect x="272" y="430" width="3" height="25" fill="#8B4513"/>
+<rect x="262" y="455" width="23" height="30" fill="#FF4500" rx="5" opacity=".85"/>
+<rect x="332" y="420" width="3" height="25" fill="#8B4513"/>
+<rect x="322" y="445" width="23" height="30" fill="#FF4500" rx="5" opacity=".85"/>
+</svg>`;
+const hiddenBlob = new Blob([HIDDEN_SVG], {type:'image/svg+xml'});
+const HIDDEN_URL = URL.createObjectURL(hiddenBlob);
+
+// ===== STATE =====
+const SKEY = 'osaka-travel-bingo';
+function defaultState(){
+  return {
+    main:{wild:{done:false,photo:null},umeda:{done:false,photo:null},osaka:{done:false,photo:null},
+          glico:{done:false,photo:null},food:{done:false},tsuten:{done:false,photo:null}},
+    food:FOOD_CELLS.map(()=>({done:false,photo:null})),
+  };
+}
+let S = loadState();
+function loadState(){
+  try{ const s=localStorage.getItem(SKEY); if(s) return JSON.parse(s); } catch(e){}
+  return defaultState();
+}
+function save(){ try{localStorage.setItem(SKEY,JSON.stringify(S));}catch(e){} }
+
+// ===== MODAL STATE =====
+let modalCtx = null;
+let pendingPhoto = null;
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', ()=>{
+  renderMainGrid();
+  renderFoodGrid();
+  updateProgress();
+});
+
+// ===== RENDER MAIN GRID =====
+function renderMainGrid(){
+  const g = document.getElementById('mainGrid');
+  g.innerHTML = '';
+  MAIN_CELLS.forEach((cfg, i) => {
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    cell.dataset.area = cfg.area;
+    cell.dataset.mainIdx = i;
+    const st = S.main[cfg.id];
+
+    if(cfg.mega){
+      // Food mega cell
+      const done = st.done;
+      const foodDone = S.food.filter(f=>f.done).length;
+      cell.innerHTML = `<div class="card">
+        <div class="card-face card-front food-mega-front${done?' completed':''}">
+          <span class="cell-icon">${done?'🎉':'🍽️'}</span>
+          <span class="cell-label">${done?'음식 빙고 완성!':'음식 빙고'}</span>
+          <span class="cell-sublabel">${done?'클릭하여 확인':foodDone+'/9 완성'}</span>
+          ${done?'':'<span class="cell-hint">클릭하여 도전!</span>'}
+          ${done?'<div class="check-mark">✓</div>':''}
+        </div>
+        <div class="card-face card-back">
+          <div class="piece" style="background-image:url('${HIDDEN_URL}');background-size:${cfg.ps};background-position:${cfg.pp};"></div>
+        </div>
+      </div>`;
+      if(done) cell.classList.add('completed');
+      cell.onclick = ()=>{ if(st.done){ toggleFlip(cell); } else { showFoodView(); }};
+    } else if(st.done){
+      cell.classList.add('completed');
+      cell.innerHTML = `<div class="card flipped">
+        <div class="card-face card-front">
+          <div class="piece" style="background-image:url('${HIDDEN_URL}');background-size:${cfg.ps};background-position:${cfg.pp};"></div>
+        </div>
+        <div class="card-face card-back">
+          <img src="${st.photo}" style="width:100%;height:100%;object-fit:cover;">
+          <div class="check-mark">✓</div>
+        </div>
+      </div>`;
+      cell.onclick = ()=> toggleFlip(cell);
+    } else {
+      cell.innerHTML = `<div class="card">
+        <div class="card-face card-front" style="background:${cfg.grad}">
+          <span class="cell-icon">${cfg.icon}</span>
+          <span class="cell-label">${cfg.label}</span>
+          ${cfg.sub?'<span class="cell-sublabel">'+cfg.sub+'</span>':''}
+        </div>
+        <div class="card-face card-back">
+          <div class="piece" style="background-image:url('${HIDDEN_URL}');background-size:${cfg.ps};background-position:${cfg.pp};"></div>
+        </div>
+      </div>`;
+      cell.onclick = ()=> openModal('main', i, cfg);
+    }
+    g.appendChild(cell);
+  });
+  highlightBingoLines();
+}
+
+// ===== RENDER FOOD GRID =====
+function renderFoodGrid(){
+  const g = document.getElementById('foodGrid');
+  g.innerHTML = '';
+  FOOD_CELLS.forEach((cfg, i) => {
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    cell.dataset.foodIdx = i;
+    const st = S.food[i];
+
+    if(st.done){
+      cell.classList.add('completed');
+      cell.innerHTML = `<div class="card flipped">
+        <div class="card-face card-front food-piece-back">
+          <span class="emoji">${cfg.icon}</span>
+          <span class="fname">${cfg.label}</span>
+        </div>
+        <div class="card-face card-back">
+          <img src="${st.photo}" style="width:100%;height:100%;object-fit:cover;">
+          <div class="check-mark">✓</div>
+        </div>
+      </div>`;
+      cell.onclick = ()=> toggleFlip(cell);
+    } else {
+      cell.innerHTML = `<div class="card">
+        <div class="card-face card-front" style="background:${cfg.grad}">
+          <span class="cell-icon">${cfg.icon}</span>
+          <span class="cell-label">${cfg.label}</span>
+          ${cfg.sub?'<span class="cell-sublabel">'+cfg.sub+'</span>':''}
+        </div>
+        <div class="card-face card-back food-piece-back">
+          <span class="emoji">${cfg.icon}</span>
+          <span class="fname">${cfg.label}</span>
+        </div>
+      </div>`;
+      cell.onclick = ()=> openModal('food', i, cfg);
+    }
+    g.appendChild(cell);
+  });
+  updateFoodStatus();
+}
+
+function toggleFlip(cell){
+  const card = cell.querySelector('.card');
+  card.classList.toggle('flipped');
+}
+
+// ===== MODAL =====
+function openModal(type, idx, cfg){
+  modalCtx = {type, idx};
+  pendingPhoto = null;
+  document.getElementById('modalTitle').textContent = cfg.label;
+  document.getElementById('modalSub').textContent = cfg.sub || '사진을 업로드하세요';
+  document.getElementById('fileInput').value = '';
+  document.getElementById('previewImg').style.display = 'none';
+  document.getElementById('uploadBtn').disabled = true;
+  document.getElementById('modal').classList.add('active');
+}
+function closeModal(){
+  document.getElementById('modal').classList.remove('active');
+  modalCtx = null; pendingPhoto = null;
+}
+function onFileSelect(e){
+  const f = e.target.files[0];
+  if(!f) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    resizeImg(ev.target.result, 400, d => {
+      pendingPhoto = d;
+      const img = document.getElementById('previewImg');
+      img.src = d; img.style.display = 'block';
+      document.getElementById('uploadBtn').disabled = false;
+    });
+  };
+  r.readAsDataURL(f);
+}
+function resizeImg(dataUrl, max, cb){
+  const img = new Image();
+  img.onload = ()=>{
+    const c = document.createElement('canvas');
+    let w=img.width, h=img.height;
+    if(w>max||h>max){ if(w>h){h=(h/w)*max;w=max;}else{w=(w/h)*max;h=max;} }
+    c.width=w; c.height=h;
+    c.getContext('2d').drawImage(img,0,0,w,h);
+    cb(c.toDataURL('image/jpeg',0.7));
+  };
+  img.src = dataUrl;
+}
+function confirmUpload(){
+  if(!pendingPhoto) return;
+  completeUpload(pendingPhoto);
+}
+function dummyUpload(){
+  const c = document.createElement('canvas');
+  c.width=400; c.height=400;
+  const ctx = c.getContext('2d');
+  const cols=['#FF6B6B','#4ECDC4','#45B7D1','#96CEB4','#FFEAA7','#DDA0DD','#98D8C8'];
+  const g = ctx.createLinearGradient(0,0,400,400);
+  g.addColorStop(0,cols[Math.random()*cols.length|0]);
+  g.addColorStop(1,cols[Math.random()*cols.length|0]);
+  ctx.fillStyle=g; ctx.fillRect(0,0,400,400);
+  ctx.font='72px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('📸',200,170);
+  ctx.font='22px serif'; ctx.fillStyle='rgba(0,0,0,.5)';
+  ctx.fillText('프로토타입',200,270);
+  completeUpload(c.toDataURL('image/jpeg',0.7));
+}
+
+function completeUpload(photo){
+  if(!modalCtx) return;
+  const {type, idx} = modalCtx;
+
+  if(type === 'main'){
+    const cfg = MAIN_CELLS[idx];
+    S.main[cfg.id].done = true;
+    S.main[cfg.id].photo = photo;
+    save();
+    // Animate: update back to photo, flip
+    const cell = document.querySelector(`[data-main-idx="${idx}"]`);
+    const card = cell.querySelector('.card');
+    const back = card.querySelector('.card-back');
+    back.innerHTML = `<img src="${photo}" style="width:100%;height:100%;object-fit:cover;"><div class="check-mark">✓</div>`;
+    card.classList.add('flipped');
+    setTimeout(()=>{
+      const front = card.querySelector('.card-front');
+      front.innerHTML = `<div class="piece" style="background-image:url('${HIDDEN_URL}');background-size:${cfg.ps};background-position:${cfg.pp};"></div>`;
+      front.style.background = '';
+      cell.classList.add('completed');
+      cell.onclick = ()=> toggleFlip(cell);
+    }, 800);
+
+  } else if(type === 'food'){
+    const cfg = FOOD_CELLS[idx];
+    S.food[idx].done = true;
+    S.food[idx].photo = photo;
+    save();
+    const cell = document.querySelector(`[data-food-idx="${idx}"]`);
+    const card = cell.querySelector('.card');
+    const back = card.querySelector('.card-back');
+    back.innerHTML = `<img src="${photo}" style="width:100%;height:100%;object-fit:cover;"><div class="check-mark">✓</div>`;
+    card.classList.add('flipped');
+    setTimeout(()=>{
+      const front = card.querySelector('.card-front');
+      front.className = 'card-face card-front food-piece-back';
+      front.style.background = '';
+      front.innerHTML = `<span class="emoji">${cfg.icon}</span><span class="fname">${cfg.label}</span>`;
+      cell.classList.add('completed');
+      cell.onclick = ()=> toggleFlip(cell);
+    }, 800);
+    checkFoodBingo();
+  }
+
+  closeModal();
+  updateProgress();
+  checkMainBingo();
+}
+
+// ===== BINGO LOGIC =====
+function countFoodLines(){
+  return FOOD_LINES.filter(line => line.every(i => S.food[i].done)).length;
+}
+
+function checkFoodBingo(){
+  const lines = countFoodLines();
+  updateFoodStatus();
+  if(lines >= 2 && !S.main.food.done){
+    S.main.food.done = true;
+    save();
+    showNotification('음식 빙고 2줄 달성! 메인 음식칸 완성! 🎉');
+    // Re-render main grid to update food mega cell
+    setTimeout(()=> renderMainGrid(), 500);
+  }
+}
+
+function updateFoodStatus(){
+  const lines = countFoodLines();
+  const el = document.getElementById('foodStatus');
+  if(el) el.textContent = `완성된 줄: ${Math.min(lines,8)} / 2 ${lines>=2?'✅':''}`;
+}
+
+function countMainLines(){
+  return MAIN_LINES.filter(line => line.every(id => S.main[id].done)).length;
+}
+
+function checkMainBingo(){
+  const lines = countMainLines();
+  highlightBingoLines();
+  const allDone = Object.values(S.main).every(c => c.done);
+  if(allDone){
+    setTimeout(()=> showNotification('모든 빙고 완성! 숨겨진 그림을 확인하세요! 🎊'), 1000);
+  }
+}
+
+function highlightBingoLines(){
+  // Map cell IDs to grid positions
+  const idToPositions = {
+    wild:[0], umeda:[1], osaka:[2], glico:[3], food:[4], tsuten:[5]
+  };
+  // Reset
+  document.querySelectorAll('#mainGrid .cell').forEach(c => c.classList.remove('bingo-line'));
+  MAIN_LINES.forEach(line => {
+    if(line.every(id => S.main[id].done)){
+      line.forEach(id => {
+        const positions = idToPositions[id];
+        if(positions) positions.forEach(p => {
+          const cell = document.querySelector(`[data-main-idx="${p}"]`);
+          if(cell) cell.classList.add('bingo-line');
+        });
+      });
+    }
+  });
+}
+
+// ===== PROGRESS =====
+function updateProgress(){
+  const mainDone = Object.values(S.main).filter(c=>c.done).length;
+  const mainTotal = 6;
+  const mainPct = (mainDone/mainTotal*100);
+  document.getElementById('mainProgress').style.width = mainPct+'%';
+  document.getElementById('mainLabel').textContent = mainDone+' / '+mainTotal;
+
+  const bingoLines = countMainLines();
+  document.getElementById('bingoLabel').textContent = bingoLines+'줄';
+
+  // Picture pieces: individual cells = 1 piece each, food mega = 4 pieces
+  let pieces = 0;
+  ['wild','umeda','osaka','glico','tsuten'].forEach(id=>{ if(S.main[id].done) pieces++; });
+  if(S.main.food.done) pieces += 4;
+  document.getElementById('picProgress').style.width = (pieces/9*100)+'%';
+  document.getElementById('picLabel').textContent = pieces+' / 9';
+
+  // Mobile progress
+  const mp = document.getElementById('mobileProgress');
+  if(mp) mp.innerHTML = `<span>진행: ${mainDone}/${mainTotal}</span><span>빙고: ${bingoLines}줄</span><span>그림: ${pieces}/9</span>`;
+}
+
+// ===== VIEWS =====
+function showFoodView(){
+  document.getElementById('mainView').classList.add('hidden');
+  document.getElementById('foodView').classList.remove('hidden');
+  renderFoodGrid();
+}
+function showMainView(){
+  document.getElementById('foodView').classList.add('hidden');
+  document.getElementById('mainView').classList.remove('hidden');
+  renderMainGrid();
+  updateProgress();
+}
+
+// ===== HIDDEN PICTURE OVERLAY =====
+function showPicture(){
+  const g = document.getElementById('pictureGrid');
+  g.innerHTML = '';
+  const positions = [
+    {id:'wild',  area:'p1', ps:'300% 300%', pp:'0% 0%'},
+    {id:'umeda', area:'p2', ps:'300% 300%', pp:'50% 0%'},
+    {id:'osaka', area:'p3', ps:'300% 300%', pp:'100% 0%'},
+    {id:'glico', area:'p4', ps:'300% 300%', pp:'0% 50%'},
+    {id:'food',  area:'pf', ps:'150% 150%', pp:'100% 100%'},
+    {id:'tsuten',area:'p7', ps:'300% 300%', pp:'0% 100%'},
+  ];
+  positions.forEach(p => {
+    const cell = document.createElement('div');
+    cell.className = 'picture-cell';
+    cell.style.gridArea = p.area;
+    if(S.main[p.id].done){
+      cell.classList.add('revealed');
+      cell.innerHTML = `<div class="piece" style="background-image:url('${HIDDEN_URL}');background-size:${p.ps};background-position:${p.pp};"></div>`;
+    } else {
+      cell.classList.add('locked');
+    }
+    g.appendChild(cell);
+  });
+  document.getElementById('pictureOverlay').classList.add('active');
+}
+function closePicture(){
+  document.getElementById('pictureOverlay').classList.remove('active');
+}
+
+// ===== NOTIFICATION =====
+function showNotification(msg){
+  const el = document.createElement('div');
+  el.className = 'notification';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(()=> el.remove(), 3000);
+}
+
+// ===== RESET =====
+function resetAll(){
+  if(!confirm('모든 진행 상황을 초기화하시겠습니까?')) return;
+  S = defaultState();
+  save();
+  renderMainGrid();
+  renderFoodGrid();
+  updateProgress();
+  showNotification('초기화 완료!');
+}
+</script>
+</body>
+</html>

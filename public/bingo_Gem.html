@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>오사카 여행 빙고</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    /* === RESET & VARS === */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --red: #B91C1C;
+      --dark-red: #7F1D1D;
+      --gold: #D4A574;
+      --gold-light: #F5E6D0;
+      --cream: #F5F0E8;
+      --paper: #FAF7F2;
+      --dark: #1C1917;
+    }
+
+    body {
+      font-family: 'Noto Serif KR', 'Georgia', serif;
+      background: var(--cream);
+      color: var(--dark);
+      min-height: 100vh;
+      display: flex;
+    }
+
+    /* === SIDEBAR === */
+    .sidebar {
+      width: 240px;
+      background: var(--dark-red);
+      color: #fff;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      flex-shrink: 0;
+      /* 사이드바 줄어들지 않게 고정 */
+    }
+
+    .sidebar h1 {
+      font-size: 1.4rem;
+      text-align: center;
+      border-bottom: 2px solid var(--gold);
+      padding-bottom: 14px;
+    }
+
+    .nav-btn {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid var(--gold);
+      background: transparent;
+      color: #fff;
+      font-family: inherit;
+      font-size: 1rem;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all .3s;
+    }
+
+    .nav-btn.active {
+      background: var(--gold);
+      color: var(--dark);
+    }
+
+    .progress-section {
+      margin-top: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .progress-bar {
+      height: 8px;
+      background: rgba(255, 255, 255, .2);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--gold);
+      width: 0%;
+      transition: width .5s;
+    }
+
+    .reset-btn {
+      margin-top: 10px;
+      padding: 8px;
+      background: rgba(0, 0, 0, 0.3);
+      border: none;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    /* === MAIN CONTENT === */
+    .main-content {
+      flex: 1;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-y: auto;
+      height: 100vh;
+    }
+
+    .main-content h2 {
+      font-size: 2rem;
+      color: var(--dark-red);
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      color: #555;
+      margin-bottom: 20px;
+      font-size: 0.95rem;
+    }
+
+    /* === BINGO GRID (수정됨) === */
+    .bingo-grid {
+      display: grid;
+      gap: 10px;
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* 1열 크기 문제 해결을 위해 minmax(0, 1fr) 사용 */
+    .main-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-rows: repeat(3, minmax(0, 1fr));
+      grid-template-areas:
+        "c1 c2 c3"
+        "c4 food food"
+        "c7 food food";
+      aspect-ratio: 1 / 1;
+      /* 정사각형 비율 강제 */
+    }
+
+    .food-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-rows: repeat(3, minmax(0, 1fr));
+      aspect-ratio: 1 / 1;
+    }
+
+    /* === CELL === */
+    .cell {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      perspective: 1000px;
+      cursor: pointer;
+    }
+
+    .cell[data-area="c1"] {
+      grid-area: c1;
+    }
+
+    .cell[data-area="c2"] {
+      grid-area: c2;
+    }
+
+    .cell[data-area="c3"] {
+      grid-area: c3;
+    }
+
+    .cell[data-area="c4"] {
+      grid-area: c4;
+    }
+
+    .cell[data-area="food"] {
+      grid-area: food;
+    }
+
+    .cell[data-area="c7"] {
+      grid-area: c7;
+    }
+
+    .card {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.6s;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .card.flipped {
+      transform: rotateY(180deg);
+    }
+
+    .card-face {
+      position: absolute;
+      inset: 0;
+      backface-visibility: hidden;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fff;
+      border: 2px solid var(--red);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* === FRONT (타겟 이미지) === */
+    .card-front {
+      z-index: 2;
+    }
+
+    .target-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.9;
+    }
+
+    .cell-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+      transition: opacity 0.3s;
+    }
+
+    .cell-title {
+      font-weight: 700;
+      font-size: 1.1rem;
+      margin-bottom: 4px;
+    }
+
+    .cell-sub {
+      font-size: 0.8rem;
+      opacity: 0.9;
+    }
+
+    /* === BACK (유저 업로드 사진) === */
+    .card-back {
+      transform: rotateY(180deg);
+      background: var(--dark);
+      position: relative;
+    }
+
+    .user-photo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* === UPLOAD CONTROLS (카드 내부) === */
+    .upload-controls {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 10;
+    }
+
+    /* 모바일에서는 항상 약간 보이게 하거나 터치시 보이게 처리 */
+    .card-back:hover .upload-controls,
+    .card-back.active .upload-controls {
+      opacity: 1;
+    }
+
+    .mini-btn {
+      background: var(--gold);
+      color: var(--dark);
+      border: none;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .mini-btn:hover {
+      background: #fff;
+    }
+
+    /* === DETAIL MODAL (백엔드 데이터 표시용) === */
+    .detail-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 999;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .detail-modal.active {
+      display: flex;
+    }
+
+    .detail-card {
+      background: #fff;
+      width: 100%;
+      max-width: 500px;
+      border-radius: 12px;
+      overflow: hidden;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .detail-header {
+      position: relative;
+      height: 200px;
+      background: #eee;
+    }
+
+    .detail-header img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .detail-close {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.5);
+      color: #fff;
+      border: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1.2rem;
+    }
+
+    .detail-body {
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .detail-title {
+      font-size: 1.5rem;
+      color: var(--dark-red);
+      margin-bottom: 10px;
+      font-weight: 900;
+    }
+
+    .detail-desc {
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: #444;
+      margin-bottom: 20px;
+      white-space: pre-wrap;
+    }
+
+    .info-box {
+      background: var(--paper);
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border: 1px solid #ddd;
+    }
+
+    .klook-link {
+      display: block;
+      text-align: center;
+      background: #FF5722;
+      color: #fff;
+      text-decoration: none;
+      padding: 12px;
+      border-radius: 8px;
+      font-weight: bold;
+      margin-bottom: 15px;
+    }
+
+    .map-container {
+      width: 100%;
+      height: 200px;
+      background: #eee;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+
+    .map-frame {
+      width: 100%;
+      height: 100%;
+      border: 0;
+    }
+
+    .action-area {
+      border-top: 1px solid #eee;
+      padding: 20px;
+      text-align: center;
+      background: #fafafa;
+    }
+
+    .upload-trigger {
+      background: var(--red);
+      color: #fff;
+      border: none;
+      padding: 12px 30px;
+      border-radius: 25px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(185, 28, 28, 0.3);
+    }
+
+    /* === Hidden File Input === */
+    #hiddenFileInput {
+      display: none;
+    }
+
+    /* === RESPONSIVE === */
+    @media(max-width:768px) {
+      body {
+        flex-direction: column;
+      }
+
+      .sidebar {
+        width: 100%;
+        padding: 10px;
+        flex-direction: row;
+        align-items: center;
+        gap: 10px;
+        height: auto;
+        min-height: 60px;
+      }
+
+      .sidebar h1 {
+        font-size: 1.1rem;
+        border: none;
+        padding: 0;
+        margin-right: auto;
+      }
+
+      .nav-btn {
+        width: auto;
+        padding: 6px 12px;
+        font-size: 0.8rem;
+      }
+
+      .progress-section {
+        display: none;
+      }
+
+      .main-content {
+        padding: 10px;
+      }
+
+      .bingo-grid {
+        gap: 6px;
+      }
+
+      .cell-title {
+        font-size: 0.8rem;
+      }
+
+      .cell-sub {
+        font-size: 0.7rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <aside class="sidebar">
+    <h1>🇯🇵 오사카 빙고</h1>
+    <div class="progress-section">
+      <div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:0.9rem;">
+          <span>진행률</span>
+          <span id="progText">0/6</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progBar"></div>
+        </div>
+      </div>
+      <button class="reset-btn" onclick="resetData()">데이터 초기화</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div id="mainView" style="width:100%;display:flex;flex-direction:column;align-items:center;">
+      <h2>오사카 명소 빙고</h2>
+      <p class="subtitle">사진을 클릭하여 상세 정보를 확인하세요.</p>
+      <div class="bingo-grid main-grid" id="mainGrid"></div>
+    </div>
+
+    <div id="foodView" style="display:none;width:100%;flex-direction:column;align-items:center;">
+      <button onclick="showMain()"
+        style="margin-bottom:15px;background:none;border:none;font-size:1rem;cursor:pointer;">← 메인으로 돌아가기</button>
+      <h2>오사카 먹방 빙고</h2>
+      <div class="bingo-grid food-grid" id="foodGrid"></div>
+    </div>
+  </main>
+
+  <div class="detail-modal" id="detailModal">
+    <div class="detail-card">
+      <div class="detail-header">
+        <img id="d-img" src="">
+        <button class="detail-close" onclick="closeDetail()">×</button>
+      </div>
+      <div class="detail-body">
+        <h3 id="d-title" class="detail-title">장소 이름</h3>
+        <p id="d-desc" class="detail-desc">설명 텍스트...</p>
+
+        <a id="d-klook" href="#" target="_blank" class="klook-link">🎟️ 클룩에서 티켓 예매하기</a>
+
+        <div class="map-container">
+          <iframe id="d-map" class="map-frame" loading="lazy" allowfullscreen></iframe>
+        </div>
+      </div>
+      <div class="action-area">
+        <button class="upload-trigger" onclick="triggerUpload()">📷 인증샷 올리기</button>
+      </div>
+    </div>
+  </div>
+
+  <input type="file" id="hiddenFileInput" accept="image/*" onchange="handleFileSelect(event)">
+
+  <script>
+    // ===== 설정 및 데이터 (실제로는 백엔드에서 받아올 데이터 구조) =====
+    // targetImg: 빙고칸에 표시될 목표 이미지 URL (현재는 예시용 Unsplash URL)
+    const MAIN_DATA = [
+      { id: 'wild', label: '자유 여행', sub: '아무곳이나', area: 'c1', targetImg: 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=400&q=80' },
+      { id: 'umeda', label: '우메다', sub: '스카이빌딩', area: 'c2', targetImg: 'https://images.unsplash.com/photo-1590253230538-4b7b25e791e3?w=400&q=80' },
+      { id: 'osaka', label: '오사카성', sub: '천수각', area: 'c3', targetImg: 'https://images.unsplash.com/photo-1590559313204-454d89a69146?w=400&q=80' },
+      { id: 'glico', label: '도톤보리', sub: '글리코상', area: 'c4', targetImg: 'https://images.unsplash.com/photo-1599413208757-377df5003c27?w=400&q=80' },
+      { id: 'food', label: '먹방 빙고', sub: '클릭하여 이동', area: 'food', targetImg: 'https://images.unsplash.com/photo-1583561633465-38b434440539?w=400&q=80', isMega: true },
+      { id: 'tsuten', label: '츠텐카쿠', sub: '신세카이', area: 'c7', targetImg: 'https://images.unsplash.com/photo-1542051841857-5f90071e7989?w=400&q=80' }
+    ];
+
+    const FOOD_DATA = [
+      { id: 'f1', label: '타코야키', targetImg: 'https://images.unsplash.com/photo-1604561726002-31518b5b7c7b?w=300' },
+      { id: 'f2', label: '오코노미야끼', targetImg: 'https://images.unsplash.com/photo-1592358892523-a21350a04977?w=300' },
+      { id: 'f3', label: '라멘', targetImg: 'https://images.unsplash.com/photo-1591814468924-caf88d1232e1?w=300' },
+      { id: 'f4', label: '규카츠', targetImg: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=300' },
+      { id: 'f5', label: '야끼토리', targetImg: 'https://images.unsplash.com/photo-1594221708779-94832f4320d1?w=300' },
+      { id: 'f6', label: '스시', targetImg: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=300' },
+      { id: 'f7', label: '편의점', targetImg: 'https://images.unsplash.com/photo-1634547903698-c8df59f518b8?w=300' },
+      { id: 'f8', label: '디저트', targetImg: 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=300' },
+      { id: 'f9', label: '맥주', targetImg: 'https://images.unsplash.com/photo-1567696911980-2c0c978002df?w=300' },
+    ];
+
+    // 로컬 스토리지 키
+    const SKEY = 'osaka_bingo_v2';
+    let STATE = loadState();
+    let currentModalContext = null; // 현재 열린 모달의 정보 {type, index}
+
+    function loadState() {
+      try {
+        const s = localStorage.getItem(SKEY);
+        if (s) return JSON.parse(s);
+      } catch (e) { }
+      return {
+        main: Array(6).fill({ done: false, photo: null }),
+        food: Array(9).fill({ done: false, photo: null })
+      };
+    }
+    function saveState() { localStorage.setItem(SKEY, JSON.stringify(STATE)); }
+
+    // 초기화
+    window.onload = () => {
+      renderMain();
+      renderFood();
+      updateProgress();
+    };
+
+    // === 렌더링 로직 ===
+    function renderMain() {
+      const grid = document.getElementById('mainGrid');
+      grid.innerHTML = '';
+      MAIN_DATA.forEach((item, idx) => {
+        const st = STATE.main[idx];
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.dataset.area = item.area;
+
+        // 메가 셀(음식) 처리
+        if (item.isMega) {
+          const doneCount = STATE.food.filter(f => f.done).length;
+          cell.onclick = () => showFood();
+          cell.innerHTML = `
+        <div class="card">
+          <div class="card-face card-front">
+            <img src="${item.targetImg}" class="target-img">
+            <div class="cell-overlay" style="background:rgba(185,28,28,0.7)">
+              <div class="cell-title">${item.label}</div>
+              <div class="cell-sub">${doneCount}/9 완료</div>
+            </div>
+          </div>
+        </div>`;
+          return grid.appendChild(cell);
+        }
+
+        // 일반 셀
+        const isDone = st && st.done;
+        cell.innerHTML = `
+      <div class="card ${isDone ? 'flipped' : ''}">
+        <div class="card-face card-front" onclick="openDetail('main', ${idx})">
+          <img src="${item.targetImg}" class="target-img">
+          <div class="cell-overlay">
+            <div class="cell-title">${item.label}</div>
+            <div class="cell-sub">${item.sub}</div>
+          </div>
+        </div>
+        <div class="card-face card-back">
+          <img src="${isDone ? st.photo : ''}" class="user-photo">
+          <div class="upload-controls">
+            <button class="mini-btn" onclick="openDetail('main', ${idx})">🔄 사진 변경</button>
+          </div>
+        </div>
+      </div>
+    `;
+        grid.appendChild(cell);
+      });
+    }
+
+    function renderFood() {
+      const grid = document.getElementById('foodGrid');
+      grid.innerHTML = '';
+      FOOD_DATA.forEach((item, idx) => {
+        const st = STATE.food[idx];
+        const isDone = st && st.done;
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+
+        cell.innerHTML = `
+      <div class="card ${isDone ? 'flipped' : ''}">
+        <div class="card-face card-front" onclick="openDetail('food', ${idx})">
+          <img src="${item.targetImg}" class="target-img">
+          <div class="cell-overlay">
+            <div class="cell-title">${item.label}</div>
+          </div>
+        </div>
+        <div class="card-face card-back">
+          <img src="${isDone ? st.photo : ''}" class="user-photo">
+          <div class="upload-controls">
+            <button class="mini-btn" onclick="openDetail('food', ${idx})">🔄 사진 변경</button>
+          </div>
+        </div>
+      </div>
+    `;
+        grid.appendChild(cell);
+      });
+    }
+
+    // === 상세 모달 & 백엔드 시뮬레이션 ===
+    function openDetail(type, idx) {
+      currentModalContext = { type, idx };
+      const data = type === 'main' ? MAIN_DATA[idx] : FOOD_DATA[idx];
+
+      // 로딩 상태 표시 (옵션)
+      document.getElementById('d-title').innerText = "Loading...";
+      document.getElementById('detailModal').classList.add('active');
+
+      // 백엔드 데이터 요청 시뮬레이션
+      fetchCellDetail(data.id).then(info => {
+        document.getElementById('d-img').src = data.targetImg;
+        document.getElementById('d-title').innerText = data.label;
+        document.getElementById('d-desc').innerText = info.description;
+
+        const klookBtn = document.getElementById('d-klook');
+        if (info.klookUrl) {
+          klookBtn.href = info.klookUrl;
+          klookBtn.style.display = 'block';
+        } else {
+          klookBtn.style.display = 'none';
+        }
+
+        // 구글맵 (임베드 URL 방식 사용)
+        // 실제로는 Google Maps JavaScript API를 사용하거나, 위도/경도를 받아와야 함
+        const mapFrame = document.getElementById('d-map');
+        mapFrame.src = `https://www.google.com/maps/embed/v1/place?key=YOUR_API_KEY_HERE&q=${encodeURIComponent(info.mapQuery)}`;
+        // 주의: API KEY가 없으면 작동하지 않으므로, 데모용으로는 간단한 검색 링크로 대체하거나 위 코드를 수정해야 합니다.
+        // 현재는 API 키 없이 작동하는 단순 iframe map 예시(Embed API 아님)로 대체 불가하여(구글 정책 변경), 
+        // 아래와 같이 '지도 검색 결과'를 보여주는 방식은 iframe 거부가 많습니다. 
+        // 따라서 여기서는 '데모용'으로만 놔두고, 실제 구현 시 API Key를 넣어야 함을 주석으로 남깁니다.
+        // 임시로 이미지를 대체하겠습니다.
+        if (type === 'main' && idx === 0) { // Wild 카드 예외처리
+          mapFrame.src = "about:blank";
+        } else {
+          // 여기서는 데모를 위해 API Key가 필요없는 예전 방식은 막혔으므로, 빈 화면 혹은 에러가 뜰 수 있습니다.
+          // 실제 구현 시: https://console.cloud.google.com/ 에서 API Key 발급 필요.
+        }
+      });
+    }
+
+    // [MOCK API] 백엔드 DB 역할을 하는 함수
+    function fetchCellDetail(id) {
+      return new Promise(resolve => {
+        // 실제로는 fetch('/api/bingo/detail?id='+id) ...
+        setTimeout(() => {
+          const mockDB = {
+            'wild': { desc: "오사카 어디든 상관없습니다. 여행 중 가장 인상 깊은 순간을 찍어주세요!", klookUrl: "", mapQuery: "Osaka" },
+            'umeda': { desc: "우메다 스카이 빌딩 공중정원 전망대입니다.\n야경이 특히 아름다운 곳입니다.", klookUrl: "https://www.klook.com/ko/activity/1302-umeda-sky-building-osaka/", mapQuery: "Umeda Sky Building" },
+            'osaka': { desc: "오사카의 랜드마크 오사카성입니다.\n천수각 앞에서 인증샷을 찍어보세요.", klookUrl: "https://www.klook.com/ko/activity/16016-osaka-castle-ticket-osaka/", mapQuery: "Osaka Castle" },
+            'glico': { desc: "도톤보리의 상징 글리코상입니다.\n같은 포즈로 사진을 찍는 것이 국룰!", klookUrl: "", mapQuery: "Dotonbori Glico Man" },
+            'tsuten': { desc: "신세카이의 상징 츠텐카쿠입니다.\n레트로한 분위기를 느껴보세요.", klookUrl: "https://www.klook.com/ko/activity/2899-tsutenkaku-tower-admission-ticket-osaka/", mapQuery: "Tsutenkaku" },
+            // 음식...
+            'f1': { desc: "오사카는 타코야키의 본고장! 겉바속촉 타코야키를 드세요.", mapQuery: "Osaka Takoyaki" },
+            // ...나머지 생략 (기본값 리턴)
+          };
+          resolve(mockDB[id] || { desc: "맛있는 음식을 즐기고 인증샷을 남기세요!", mapQuery: "Osaka Restaurant", klookUrl: "" });
+        }, 300); // 0.3초 딜레이 시뮬레이션
+      });
+    }
+
+    function closeDetail() {
+      document.getElementById('detailModal').classList.remove('active');
+      currentModalContext = null;
+    }
+
+    // === 파일 업로드 로직 ===
+    function triggerUpload() {
+      document.getElementById('hiddenFileInput').click();
+    }
+
+    function handleFileSelect(e) {
+      const file = e.target.files[0];
+      if (!file || !currentModalContext) return;
+
+      const reader = new FileReader();
+      reader.onload = function (ev) {
+        const result = ev.target.result;
+
+        // 상태 업데이트
+        const { type, idx } = currentModalContext;
+        if (type === 'main') {
+          STATE.main[idx].done = true;
+          STATE.main[idx].photo = result;
+        } else {
+          STATE.food[idx].done = true;
+          STATE.food[idx].photo = result;
+        }
+        saveState();
+
+        // UI 업데이트 (리렌더링)
+        if (type === 'main') renderMain();
+        else renderFood();
+
+        closeDetail();
+        updateProgress();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // === 뷰 전환 ===
+    function showFood() {
+      document.getElementById('mainView').style.display = 'none';
+      document.getElementById('foodView').style.display = 'flex';
+      renderFood();
+    }
+    function showMain() {
+      document.getElementById('foodView').style.display = 'none';
+      document.getElementById('mainView').style.display = 'flex';
+      renderMain(); // 상태 반영을 위해 재렌더링
+    }
+
+    // === 기타 ===
+    function updateProgress() {
+      const count = STATE.main.filter(x => x.done).length;
+      const pct = (count / 6) * 100;
+      document.getElementById('progBar').style.width = pct + '%';
+      document.getElementById('progText').innerText = count + '/6';
+    }
+    function resetData() {
+      if (confirm('정말 초기화하시겠습니까?')) {
+        localStorage.removeItem(SKEY);
+        location.reload();
+      }
+    }
+  </script>
+</body>
+
+</html>

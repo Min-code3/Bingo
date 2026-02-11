@@ -1,65 +1,118 @@
-import Image from "next/image";
+'use client';
+
+import React, { useState, useCallback } from 'react';
+import { useBingoState } from '@/components/useBingoState';
+import { useI18n } from '@/components/I18nProvider';
+import { CITIES, FOOD_ENTRANCE_IDS } from '@/lib/constants';
+import { getBingoLineCells, getFoodProgress, isAllMainComplete, getMainProgress } from '@/lib/bingo-logic';
+import { generateDummyPhoto } from '@/lib/image-utils';
+import { cityLabel } from '@/lib/i18n';
+import BingoCell from '@/components/BingoCell';
+import FoodEntranceCell from '@/components/FoodEntranceCell';
+import Notification from '@/components/Notification';
+import Celebration from '@/components/Celebration';
 
 export default function Home() {
+  const { state, hydrated, cityId, cellImages, userId, uploadMain, uploadFood, reset } = useBingoState();
+  const { lang, t } = useI18n();
+  const [notification, setNotification] = useState<string | null>(null);
+  const [showCelebration, setShowCelebration] = useState(false);
+
+  const city = CITIES[cityId];
+  const mainCells = city?.mainCells ?? [];
+  const bingoLineCells = getBingoLineCells(state, cityId);
+  const foodProgress = getFoodProgress(state);
+  const mainProgress = getMainProgress(state, cityId);
+  const pct = mainProgress.total > 0 ? Math.round((mainProgress.done / mainProgress.total) * 100) : 0;
+
+  const handleUpload = useCallback((id: string, photo: string) => {
+    uploadMain(id, photo);
+    const nextState = { ...state, main: { ...state.main, [id]: { done: true, photo } } };
+    if (isAllMainComplete(nextState, cityId)) {
+      setTimeout(() => setShowCelebration(true), 1500);
+    }
+  }, [uploadMain, state, cityId]);
+
+  if (!hydrated) {
+    return (
+      <>
+        <h2 className="page-title">{t('main.bingo', { city: cityLabel(cityId, lang) })}</h2>
+        <p className="page-subtitle">{t('main.loading')}</p>
+      </>
+    );
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+    <>
+      <h2 className="page-title">{t('main.bingo', { city: cityLabel(cityId, lang) })}</h2>
+      <p className="page-subtitle">{t('main.subtitle')}</p>
+
+      <div className={`bingo-grid${pct === 100 ? ' all-complete' : ''}`}>
+        {mainCells.map((cfg, idx) => {
+          const cellState = state.main[cfg.id];
+          const isLine = bingoLineCells.has(cfg.id);
+          const box = String(idx + 1);
+
+          if (FOOD_ENTRANCE_IDS.includes(cfg.id)) {
+            return (
+              <FoodEntranceCell
+                key={cfg.id}
+                config={cfg}
+                done={cellState?.done ?? false}
+                isBingoLine={isLine}
+                foodProgress={foodProgress}
+                sheetImage={cellImages?.main[box]}
+                hiddenImage={cellImages?.hidden[box]}
+              />
+            );
+          }
+
+          return (
+            <BingoCell
+              key={cfg.id}
+              config={cfg}
+              done={cellState?.done ?? false}
+              photo={cellState?.photo ?? null}
+              isBingoLine={isLine}
+              onUpload={(photo) => handleUpload(cfg.id, photo)}
+              placeUrl={`/place/${cfg.id}`}
+              sheetImage={cellImages?.main[box]}
+              hiddenImage={cellImages?.hidden[box]}
+              userId={userId}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          );
+        })}
+      </div>
+
+      <div className="bottom-progress">
+        <div className="bottom-progress-bar">
+          <div className="bottom-progress-fill" style={{ width: `${pct}%` }} />
+          <div className="bottom-progress-text">{pct}%</div>
         </div>
-      </main>
-    </div>
+      </div>
+
+      <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+        <button
+          className="small-reset-btn"
+          onClick={() => { if (confirm(t('main.confirmReset'))) reset(); }}
+        >
+          {t('main.reset')}
+        </button>
+        <button
+          className="small-reset-btn dev"
+          onClick={() => {
+            const dummy = generateDummyPhoto();
+            city.placeIds.forEach(id => { if (!state.main[id]?.done) uploadMain(id, dummy); });
+            city.foodCells.forEach((_, i) => { if (!state.food[i]?.done) uploadFood(i, dummy); });
+            setTimeout(() => setShowCelebration(true), 500);
+          }}
+        >
+          {t('main.devComplete')}
+        </button>
+      </div>
+
+      <Notification message={notification} onDone={() => setNotification(null)} />
+      <Celebration show={showCelebration} onClose={() => setShowCelebration(false)} />
+    </>
   );
 }
