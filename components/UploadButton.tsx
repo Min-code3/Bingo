@@ -87,21 +87,6 @@ export default function UploadButton({ hasPhoto, onUpload, userId, uploadPrefix 
     if (fileRef.current) fileRef.current.value = '';
   };
 
-  const handleDummy = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const photo = generateDummyPhoto();
-    onUpload(photo);
-
-    // Log dummy upload
-    logCustomEvent(userId, 'photo_upload_dummy', {
-      target: uploadPrefix,
-      metadata: {
-        upload_prefix: uploadPrefix,
-        timestamp: new Date().toISOString(),
-      },
-    });
-  };
-
   return (
     <div className="upload-btn-group" onClick={(e) => e.stopPropagation()}>
       <input
@@ -118,11 +103,6 @@ export default function UploadButton({ hasPhoto, onUpload, userId, uploadPrefix 
       >
         {uploading ? t('upload.uploading') : (hasPhoto ? t('upload.change') : t('upload.upload'))}
       </button>
-      {!hasPhoto && (
-        <button className="upload-btn upload-btn-dummy" onClick={handleDummy}>
-          {t('upload.dummy')}
-        </button>
-      )}
     </div>
   );
 }

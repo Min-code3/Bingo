@@ -98,17 +98,6 @@ export default function Home() {
         >
           {t('main.reset')}
         </button>
-        <button
-          className="small-reset-btn dev"
-          onClick={() => {
-            const dummy = generateDummyPhoto();
-            city.placeIds.forEach(id => { if (!state.main[id]?.done) uploadMain(id, dummy); });
-            city.foodCells.forEach((_, i) => { if (!state.food[i]?.done) uploadFood(i, dummy); });
-            setTimeout(() => setShowCelebration(true), 500);
-          }}
-        >
-          {t('main.devComplete')}
-        </button>
       </div>
 
       <Notification message={notification} onDone={() => setNotification(null)} />
