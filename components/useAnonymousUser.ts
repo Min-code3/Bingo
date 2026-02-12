@@ -3,36 +3,16 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { User } from '@supabase/supabase-js';
+import { useCustomId } from './useCustomId';
 
 export function useAnonymousUser() {
   const [user, setUser] = useState<User | null>(null);
-  const [customUserId, setCustomUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // URL 파라미터로 전달된 커스텀 ID 관리
+  const { currentId, isReady } = useCustomId();
+
   useEffect(() => {
-    // Check for custom user ID in URL parameters
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlUserId = urlParams.get('id');
-
-    if (urlUserId) {
-      // Use custom user ID from URL
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🆔 Using custom user ID from URL:', urlUserId);
-      }
-      // Store in localStorage to persist across sessions
-      localStorage.setItem('customUserId', urlUserId);
-      setCustomUserId(urlUserId);
-    } else {
-      // Check for stored custom user ID
-      const storedCustomUserId = localStorage.getItem('customUserId');
-      if (storedCustomUserId) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('🆔 Using stored custom user ID:', storedCustomUserId);
-        }
-        setCustomUserId(storedCustomUserId);
-      }
-    }
-
     // Always initialize Supabase auth (needed for logging permissions)
     const initAuth = async () => {
       try {
@@ -79,7 +59,12 @@ export function useAnonymousUser() {
   }, []);
 
   // Return custom user ID if available, otherwise use Supabase user ID
-  const finalUserId = customUserId || user?.id;
+  const finalUserId = currentId || user?.id;
+  const finalLoading = loading || !isReady;
 
-  return { user, userId: finalUserId, loading };
+  if (process.env.NODE_ENV === 'development' && isReady && currentId) {
+    console.log('📊 Final User ID:', finalUserId, '(Custom ID:', currentId, ')');
+  }
+
+  return { user, userId: finalUserId, loading: finalLoading };
 }
