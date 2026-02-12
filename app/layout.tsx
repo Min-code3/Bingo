@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import { Noto_Serif_KR } from 'next/font/google';
 import { I18nProvider } from '@/components/I18nProvider';
 import { BingoProvider } from '@/components/BingoProvider';
@@ -23,14 +24,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" suppressHydrationWarning>
       <body className={notoSerifKR.className} suppressHydrationWarning>
         <I18nProvider>
-          <BingoProvider>
-            <GlobalLogger />
-            <Sidebar />
-            <main className="main-content">
-              {children}
-              <LanguageToggle />
-            </main>
-          </BingoProvider>
+          <Suspense fallback={<div>Loading...</div>}>
+            <BingoProvider>
+              <GlobalLogger />
+              <Sidebar />
+              <main className="main-content">
+                {children}
+                <LanguageToggle />
+              </main>
+            </BingoProvider>
+          </Suspense>
         </I18nProvider>
       </body>
     </html>
