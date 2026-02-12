@@ -27,8 +27,10 @@ export default function ExamplePage() {
 
     // 예제 1: 페이지 로드 이벤트 로깅
     logCustomEvent(userId, 'page_loaded', {
-      timestamp: new Date().toISOString(),
-      customData: 'Any data you want',
+      metadata: {
+        timestamp: new Date().toISOString(),
+        customData: 'Any data you want',
+      },
     });
 
     // 예제 2: Supabase에 직접 데이터 저장
@@ -102,8 +104,10 @@ export default function ExamplePage() {
         <button
           onClick={() => {
             logCustomEvent(userId, 'button_click', {
-              button_name: 'test_button',
-              clicked_at: new Date().toISOString(),
+              metadata: {
+                button_name: 'test_button',
+                clicked_at: new Date().toISOString(),
+              },
             });
             alert(`버튼 클릭 로그가 user_id="${userId}"로 저장되었습니다!`);
           }}
