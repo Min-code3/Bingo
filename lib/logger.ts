@@ -23,8 +23,12 @@ export async function logEvent(userId: string | undefined, event: LogEvent): Pro
   }
 
   try {
+    // Supabase user를 가져와서 user_id는 UUID로 사용
+    const { data: { user } } = await supabase.auth.getUser();
+
     const logData = {
-      user_id: userId,
+      user_id: user?.id || null, // Supabase UUID (Foreign Key 호환)
+      custom_user_id: userId, // 커스텀 ID ("990", "me" 등)
       action_type: event.action_type,
       target: event.target,
       page_url: event.page_url || window.location.href,
@@ -167,8 +171,12 @@ export async function logEventWithBeacon(
   if (!userId) return;
 
   try {
+    // Supabase user를 가져와서 user_id는 UUID로 사용
+    const { data: { user } } = await supabase.auth.getUser();
+
     const logData = {
-      user_id: userId,
+      user_id: user?.id || null, // Supabase UUID (Foreign Key 호환)
+      custom_user_id: userId, // 커스텀 ID ("990", "me" 등)
       action_type: event.action_type,
       target: event.target,
       page_url: event.page_url || window.location.href,
