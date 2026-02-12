@@ -39,8 +39,9 @@ export function useCustomId() {
           console.log('🆔 localStorage에서 복원:', storedId);
         }
         setCurrentId(storedId);
-        // URL에 id 파라미터 추가 (페이지 새로고침 없이)
-        router.replace(`/?id=${storedId}`, { scroll: false });
+        // 현재 pathname 유지하면서 id 파라미터만 추가 (페이지 새로고침 없이)
+        const pathname = window.location.pathname;
+        router.replace(`${pathname}?id=${storedId}`, { scroll: false });
         setIsReady(true);
       } else {
         // 둘 다 없으면 null
@@ -58,14 +59,15 @@ export function useCustomId() {
    * URL과 localStorage 모두 업데이트
    */
   const updateId = (newId: string | null) => {
+    const pathname = window.location.pathname;
     if (newId) {
       setCurrentId(newId);
       localStorage.setItem(STORAGE_KEY, newId);
-      router.replace(`/?id=${newId}`, { scroll: false });
+      router.replace(`${pathname}?id=${newId}`, { scroll: false });
     } else {
       setCurrentId(null);
       localStorage.removeItem(STORAGE_KEY);
-      router.replace('/', { scroll: false });
+      router.replace(pathname, { scroll: false });
     }
   };
 
@@ -75,7 +77,8 @@ export function useCustomId() {
   const clearId = () => {
     setCurrentId(null);
     localStorage.removeItem(STORAGE_KEY);
-    router.replace('/', { scroll: false });
+    const pathname = window.location.pathname;
+    router.replace(pathname, { scroll: false });
   };
 
   return {
