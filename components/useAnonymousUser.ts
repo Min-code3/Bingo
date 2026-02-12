@@ -22,22 +22,18 @@ export function useAnonymousUser() {
       // Store in localStorage to persist across sessions
       localStorage.setItem('customUserId', urlUserId);
       setCustomUserId(urlUserId);
-      setLoading(false);
-      return;
-    }
-
-    // Check for stored custom user ID
-    const storedCustomUserId = localStorage.getItem('customUserId');
-    if (storedCustomUserId) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🆔 Using stored custom user ID:', storedCustomUserId);
+    } else {
+      // Check for stored custom user ID
+      const storedCustomUserId = localStorage.getItem('customUserId');
+      if (storedCustomUserId) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('🆔 Using stored custom user ID:', storedCustomUserId);
+        }
+        setCustomUserId(storedCustomUserId);
       }
-      setCustomUserId(storedCustomUserId);
-      setLoading(false);
-      return;
     }
 
-    // Fallback to anonymous auth if no custom ID
+    // Always initialize Supabase auth (needed for logging permissions)
     const initAuth = async () => {
       try {
         if (process.env.NODE_ENV === 'development') {
