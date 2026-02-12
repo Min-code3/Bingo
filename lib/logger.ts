@@ -28,9 +28,11 @@ export async function logEvent(userId: string | undefined, event: LogEvent): Pro
       action_type: event.action_type,
       target: event.target,
       page_url: event.page_url || window.location.href,
-      element_type: event.element_type,
-      element_text: event.element_text,
-      metadata: event.metadata,
+      metadata: {
+        ...event.metadata,
+        element_type: event.element_type,
+        element_text: event.element_text,
+      },
     };
 
     // Log to console in development
@@ -170,9 +172,11 @@ export async function logEventWithBeacon(
       action_type: event.action_type,
       target: event.target,
       page_url: event.page_url || window.location.href,
-      element_type: event.element_type,
-      element_text: event.element_text,
-      metadata: event.metadata,
+      metadata: {
+        ...event.metadata,
+        element_type: event.element_type,
+        element_text: event.element_text,
+      },
     };
 
     // Get the session for auth token
