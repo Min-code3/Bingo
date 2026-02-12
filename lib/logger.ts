@@ -38,15 +38,17 @@ export async function logEvent(userId: string | undefined, event: LogEvent): Pro
       console.log('📊 Logger:', event.action_type, '→', event.target || event.element_type);
     }
 
+    // TEMPORARY: Log data being sent (for debugging 400 errors)
+    console.log('🔍 Sending to Supabase:', JSON.stringify(logData, null, 2));
+
     const { error } = await supabase
       .from('user_logs')
       .insert(logData);
 
     if (error) {
-      // Log to console in development only
-      if (process.env.NODE_ENV === 'development') {
-        console.warn('❌ Failed to log event:', error);
-      }
+      // Always log errors (even in production, for debugging)
+      console.error('❌ Supabase error:', error);
+      console.error('❌ Failed data:', logData);
     } else {
       if (process.env.NODE_ENV === 'development') {
         console.log('✅ Logged successfully');
