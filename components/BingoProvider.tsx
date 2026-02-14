@@ -24,7 +24,7 @@ function bingoReducer(state: BingoState, action: BingoAction): BingoState {
       }
       return next;
     }
-    case 'RESET': return defaultState(action.cityId || 'osaka');
+    case 'RESET': return defaultState(action.cityId || 'kyoto');
     case 'LOAD': return action.state;
     default: return state;
   }
@@ -44,7 +44,7 @@ export const BingoContext = createContext<BingoContextValue>({
   state: defaultState(),
   dispatch: () => {},
   hydrated: false,
-  cityId: 'osaka',
+  cityId: 'kyoto',
   setCityId: () => {},
   cellImages: null,
   userId: undefined,
@@ -52,7 +52,7 @@ export const BingoContext = createContext<BingoContextValue>({
 
 export function BingoProvider({ children }: { children: React.ReactNode }) {
   const { userId } = useAnonymousUser();
-  const [cityId, setCityIdRaw] = React.useState('osaka');
+  const [cityId, setCityIdRaw] = React.useState('kyoto');
   const [state, dispatch] = useReducer(bingoReducer, defaultState());
   const [hydrated, setHydrated] = React.useState(false);
   const [allImages, setAllImages] = React.useState<AllCellImages | null>(null);

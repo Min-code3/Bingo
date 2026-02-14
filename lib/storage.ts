@@ -3,7 +3,7 @@ import { CITIES, FOOD_ENTRANCE_IDS, CityConfig } from './constants';
 
 const SKEY_PREFIX = 'travel-bingo-';
 
-export function defaultState(cityId: string = 'osaka'): BingoState {
+export function defaultState(cityId: string = 'kyoto'): BingoState {
   const city = CITIES[cityId];
   if (!city) return { main: {}, food: [] };
   const main: Record<string, CellState> = {};
@@ -16,7 +16,7 @@ export function defaultState(cityId: string = 'osaka'): BingoState {
   };
 }
 
-export function loadState(cityId: string = 'osaka'): BingoState {
+export function loadState(cityId: string = 'kyoto'): BingoState {
   if (typeof window === 'undefined') return defaultState(cityId);
   try {
     const raw = localStorage.getItem(SKEY_PREFIX + cityId);
@@ -32,7 +32,7 @@ export function loadState(cityId: string = 'osaka'): BingoState {
   return defaultState(cityId);
 }
 
-export function saveState(state: BingoState, cityId: string = 'osaka'): void {
+export function saveState(state: BingoState, cityId: string = 'kyoto'): void {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(SKEY_PREFIX + cityId, JSON.stringify(state));

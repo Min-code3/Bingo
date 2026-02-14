@@ -28,6 +28,7 @@ export default function Home() {
   const [foodPlaces, setFoodPlaces] = useState<FoodPlace[]>([]);
   const [progressPulse, setProgressPulse] = useState(false);
   const [lineAchieved, setLineAchieved] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
   const prevPctRef = useRef<number | null>(null); // null = 아직 초기화 안됨
   const prevLinesRef = useRef<number | null>(null); // 빙고 라인 수 추적
 
@@ -83,8 +84,12 @@ export default function Home() {
         console.log('[Bingo] Fetched foodPlaces:', foodData);
         setMainPlaces(mainData);
         setFoodPlaces(foodData);
+
+        // 데이터 로드 완료 후 짧은 딜레이로 페이지 완성 후 표시
+        setTimeout(() => setPageLoading(false), 400);
       } catch (error) {
         console.error('Failed to fetch places data:', error);
+        setTimeout(() => setPageLoading(false), 400);
       }
     };
     fetchData();
@@ -223,6 +228,13 @@ export default function Home() {
 
   return (
     <>
+      {/* 페이지 로딩 오버레이 */}
+      {pageLoading && (
+        <div className={`page-loading-overlay ${!pageLoading ? 'fade-out' : ''}`}>
+          <div className="page-loading-spinner" />
+        </div>
+      )}
+
       <h2 className="page-title">{t('main.bingo', { city: cityLabel(cityId, lang) })}</h2>
       <p className="page-subtitle">{t('main.subtitle')}</p>
 

@@ -41,7 +41,7 @@ export default function UploadButton({ hasPhoto, onUpload, userId, uploadPrefix 
       const reader = new FileReader();
       reader.onload = async (ev) => {
         const dataUrl = ev.target?.result as string;
-        const resized = await resizeImage(dataUrl, 350); // Reduced from 400 to 350 for faster upload
+        const resized = await resizeImage(dataUrl, 300); // Reduced to 300 for faster upload
 
         // Upload to Supabase if userId is provided
         if (userId) {
