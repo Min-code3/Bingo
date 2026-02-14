@@ -11,6 +11,11 @@ export default function Sidebar() {
   const { state, hydrated, cityId, setCityId, reset } = useBingoState();
   const { lang, t } = useI18n();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const mainProg = getMainProgress(state, cityId);
   const bingoLines = countMainLines(state, cityId);
@@ -24,7 +29,9 @@ export default function Sidebar() {
     <>
       {/* Desktop sidebar */}
       <aside className="sidebar">
-        <h1 className="sidebar-title">{t('sidebar.title')}</h1>
+        <h1 className="sidebar-title" suppressHydrationWarning>
+          {mounted ? t('sidebar.title') : 'Travel Bingo'}
+        </h1>
         <nav className="sidebar-nav">
           {Object.values(CITIES).map(city => (
             <button

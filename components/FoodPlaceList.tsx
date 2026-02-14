@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useI18n } from '@/components/I18nProvider';
 import { useBingoState } from '@/components/useBingoState';
-import { logEventWithBeacon } from '@/lib/logger';
+import { logEventWithBeacon, nowTokyo } from '@/lib/logger';
 import { CELL_TO_MENU } from '@/lib/i18n';
 import type { FoodPlace } from '@/lib/sheets';
 
@@ -32,7 +32,7 @@ export default function FoodPlaceList({ cellId, cityId }: Props) {
         restaurant_name: placeName,
         cell_id: cellId,
         map_url: url,
-        timestamp: new Date().toISOString(),
+        timestamp: nowTokyo(),
       },
     });
     // Link will navigate naturally after this

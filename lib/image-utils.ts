@@ -10,8 +10,21 @@ export function resizeImage(dataUrl: string, maxSize: number): Promise<string> {
       }
       canvas.width = w;
       canvas.height = h;
-      canvas.getContext('2d')!.drawImage(img, 0, 0, w, h);
-      resolve(canvas.toDataURL('image/jpeg', 0.7));
+      const ctx = canvas.getContext('2d')!;
+
+      // Use better image smoothing for quality
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+
+      ctx.drawImage(img, 0, 0, w, h);
+
+      // Use WebP if supported, otherwise JPEG with lower quality for faster upload
+      const isWebPSupported = canvas.toDataURL('image/webp').indexOf('data:image/webp') === 0;
+      if (isWebPSupported) {
+        resolve(canvas.toDataURL('image/webp', 0.8)); // WebP with 0.8 quality
+      } else {
+        resolve(canvas.toDataURL('image/jpeg', 0.6)); // JPEG with 0.6 quality (reduced from 0.7)
+      }
     };
     img.src = dataUrl;
   });

@@ -1,5 +1,10 @@
 import { supabase } from './supabase';
 
+/** 도쿄/한국 시간(+09:00)으로 ISO 형식 타임스탬프 반환 */
+export function nowTokyo(): string {
+  return new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Tokyo' }).replace(' ', 'T') + '+09:00';
+}
+
 export interface LogEvent {
   action_type: string;
   target?: string;
@@ -247,7 +252,7 @@ export function logClick(
       viewport_width: window.innerWidth,
       viewport_height: window.innerHeight,
       scroll_y: window.scrollY,
-      timestamp_client: new Date().toISOString(),
+      timestamp_client: nowTokyo(),
     },
   });
 }
@@ -269,7 +274,7 @@ export async function logExternalLink(
       target: element.target,
       viewport_width: window.innerWidth,
       viewport_height: window.innerHeight,
-      timestamp_client: new Date().toISOString(),
+      timestamp_client: nowTokyo(),
     },
   });
 }
@@ -287,7 +292,7 @@ export function logPageView(userId: string | undefined, pageUrl?: string): void 
       viewport_width: window.innerWidth,
       viewport_height: window.innerHeight,
       user_agent: navigator.userAgent,
-      timestamp_client: new Date().toISOString(),
+      timestamp_client: nowTokyo(),
     },
   });
 }

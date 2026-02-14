@@ -1,4 +1,4 @@
-import { logCustomEvent } from './logger';
+import { logCustomEvent, nowTokyo } from './logger';
 
 /**
  * Analytics helper functions for tracking specific app events
@@ -17,7 +17,7 @@ export function trackPhotoUpload(
       cell_type: cellType,
       cell_id: cellId,
       success,
-      timestamp: new Date().toISOString(),
+      timestamp: nowTokyo(),
     },
   });
 }
@@ -34,7 +34,7 @@ export function trackBingoComplete(
       bingo_type: bingoType,
       city_id: cityId,
       cells_completed: cellsCompleted,
-      timestamp: new Date().toISOString(),
+      timestamp: nowTokyo(),
     },
   });
 }
@@ -49,7 +49,7 @@ export function trackCityChange(
     metadata: {
       from_city: fromCity,
       to_city: toCity,
-      timestamp: new Date().toISOString(),
+      timestamp: nowTokyo(),
     },
   });
 }
@@ -64,7 +64,7 @@ export function trackLanguageChange(
     metadata: {
       from_lang: fromLang,
       to_lang: toLang,
-      timestamp: new Date().toISOString(),
+      timestamp: nowTokyo(),
     },
   });
 }
@@ -79,7 +79,7 @@ export function trackCellView(
     metadata: {
       cell_type: cellType,
       cell_id: cellId,
-      timestamp: new Date().toISOString(),
+      timestamp: nowTokyo(),
     },
   });
 }
@@ -94,7 +94,7 @@ export function trackRestaurantView(
     metadata: {
       restaurant_name: restaurantName,
       cell_id: cellId,
-      timestamp: new Date().toISOString(),
+      timestamp: nowTokyo(),
     },
   });
 }
@@ -109,7 +109,7 @@ export function trackExternalLink(
     metadata: {
       url,
       link_type: linkType,
-      timestamp: new Date().toISOString(),
+      timestamp: nowTokyo(),
     },
   });
 }
@@ -126,7 +126,7 @@ export function trackError(
       error_type: errorType,
       error_message: errorMessage,
       context,
-      timestamp: new Date().toISOString(),
+      timestamp: nowTokyo(),
     },
   });
 }

@@ -79,6 +79,11 @@ const ui = {
     'celebration.revealing': 'Revealing hidden picture...',
     'celebration.congrats': 'Congratulations! You completed the {city} travel bingo!',
     'celebration.close': 'Close',
+
+    // Tutorial box (center cell - Kyoto)
+    'tutorial.ready': 'Ready to explore?',
+    'tutorial.tap': 'Tap to start your bingo',
+    'tutorial.notification': 'Let\'s make bingo!',
   },
   ko: {
     'main.bingo': '{city} 빙고',
@@ -133,6 +138,10 @@ const ui = {
     'celebration.revealing': '숨겨진 그림 공개...',
     'celebration.congrats': '축하합니다! {city} 여행 빙고를 완성했습니다!',
     'celebration.close': '닫기',
+
+    'tutorial.ready': '투어 준비되셨나요?',
+    'tutorial.tap': '탭해서 빙고 시작하기',
+    'tutorial.notification': '빙고를 만들어봐요!',
   },
 } as const;
 

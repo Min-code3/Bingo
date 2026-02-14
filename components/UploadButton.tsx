@@ -3,7 +3,7 @@
 import React, { useRef, useState } from 'react';
 import { resizeImage, generateDummyPhoto } from '@/lib/image-utils';
 import { uploadImageToSupabase } from '@/lib/upload-utils';
-import { logCustomEvent } from '@/lib/logger';
+import { logCustomEvent, nowTokyo } from '@/lib/logger';
 import { useI18n } from './I18nProvider';
 
 interface UploadButtonProps {
@@ -11,9 +11,10 @@ interface UploadButtonProps {
   onUpload: (photo: string) => void;
   userId?: string; // Optional: if provided, uploads to Supabase
   uploadPrefix?: string; // Optional: prefix for uploaded files (e.g., "food", "main")
+  label?: string; // Optional: custom label for button
 }
 
-export default function UploadButton({ hasPhoto, onUpload, userId, uploadPrefix = 'photo' }: UploadButtonProps) {
+export default function UploadButton({ hasPhoto, onUpload, userId, uploadPrefix = 'photo', label }: UploadButtonProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const { t } = useI18n();
   const [uploading, setUploading] = useState(false);
@@ -32,7 +33,7 @@ export default function UploadButton({ hasPhoto, onUpload, userId, uploadPrefix 
         file_type: file.type,
         upload_prefix: uploadPrefix,
         has_user_id: !!userId,
-        timestamp: new Date().toISOString(),
+        timestamp: nowTokyo(),
       },
     });
 
@@ -40,7 +41,7 @@ export default function UploadButton({ hasPhoto, onUpload, userId, uploadPrefix 
       const reader = new FileReader();
       reader.onload = async (ev) => {
         const dataUrl = ev.target?.result as string;
-        const resized = await resizeImage(dataUrl, 400);
+        const resized = await resizeImage(dataUrl, 350); // Reduced from 400 to 350 for faster upload
 
         // Upload to Supabase if userId is provided
         if (userId) {
@@ -54,7 +55,7 @@ export default function UploadButton({ hasPhoto, onUpload, userId, uploadPrefix 
               metadata: {
                 storage: 'supabase',
                 upload_prefix: uploadPrefix,
-                timestamp: new Date().toISOString(),
+                timestamp: nowTokyo(),
               },
             });
           } catch (error) {
@@ -66,7 +67,7 @@ export default function UploadButton({ hasPhoto, onUpload, userId, uploadPrefix 
               metadata: {
                 error: String(error),
                 upload_prefix: uploadPrefix,
-                timestamp: new Date().toISOString(),
+                timestamp: nowTokyo(),
               },
             });
 
@@ -101,7 +102,7 @@ export default function UploadButton({ hasPhoto, onUpload, userId, uploadPrefix 
         onClick={(e) => { e.stopPropagation(); fileRef.current?.click(); }}
         disabled={uploading}
       >
-        {uploading ? t('upload.uploading') : (hasPhoto ? t('upload.change') : t('upload.upload'))}
+        {uploading ? t('upload.uploading') : (label || (hasPhoto ? t('upload.change') : t('upload.upload')))}
       </button>
     </div>
   );
