@@ -14,10 +14,9 @@ import BottomSheet from '@/components/BottomSheet';
 import Notification from '@/components/Notification';
 import Celebration from '@/components/Celebration';
 import Confetti from '@/components/Confetti';
-import FreePhotoUpload from '@/components/FreePhotoUpload';
 
 export default function Home() {
-  const { state, hydrated, cityId, cellImages, userId, uploadMain, uploadFood, reset, addFreePhotos, canFreeUpload, freeRemainingSlots } = useBingoState();
+  const { state, hydrated, cityId, cellImages, userId, uploadMain, uploadFood, reset, addPhotoMain, removePhotoMain } = useBingoState();
   const { lang, t } = useI18n();
   const [mounted, setMounted] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
@@ -193,32 +192,20 @@ export default function Home() {
     setBottomSheetOpen(true);
   }, [cityId, state.main, uploadMain, findDbData]);
 
-  const handleBottomSheetUpload = useCallback((photo: string) => {
+  const handleBottomSheetUpload = useCallback((newPhotos: string[]) => {
     if (selectedCell) {
-      if (FOOD_ENTRANCE_IDS.includes(selectedCell.id)) {
-        // Food entrance cells - just mark as done for now
-        uploadMain(selectedCell.id, photo);
-      } else {
-        handleUpload(selectedCell.id, photo);
-      }
+      // Add all new photos to the cell
+      newPhotos.forEach(photo => {
+        addPhotoMain(selectedCell.id, photo);
+      });
     }
-  }, [selectedCell, uploadMain, handleUpload]);
+  }, [selectedCell, addPhotoMain]);
 
-  // 프로토타입: 모든 칸을 더미 사진으로 완성
-  const handleCompleteAll = useCallback(() => {
-    mainCells.forEach(cfg => {
-      if (!state.main[cfg.id]?.done) {
-        const dummyPhoto = generateDummyPhoto();
-        uploadMain(cfg.id, dummyPhoto);
-      }
-    });
-  }, [mainCells, state.main, uploadMain]);
-
-  // 프로토타입: 특정 칸을 더미 사진으로 완성
-  const handleDummyUpload = useCallback((id: string) => {
-    const dummyPhoto = generateDummyPhoto();
-    handleUpload(id, dummyPhoto);
-  }, [handleUpload]);
+  const handlePhotoDelete = useCallback((photoIndex: number) => {
+    if (selectedCell) {
+      removePhotoMain(selectedCell.id, photoIndex);
+    }
+  }, [selectedCell, removePhotoMain]);
 
   // 히든 이미지 클릭 시 업로드한 사진을 보여주고 2초 후 다시 플립
   const handleHiddenImageClick = useCallback((id: string, e: React.MouseEvent) => {
@@ -327,23 +314,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* 자유 사진 업로드 버튼 */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-        <FreePhotoUpload
-          remainingSlots={freeRemainingSlots}
-          canUpload={canFreeUpload}
-          onUpload={addFreePhotos}
-          userId={userId}
-        />
-        {/* 프로토타입 버튼 */}
-        <button
-          className="prototype-btn"
-          onClick={handleCompleteAll}
-        >
-          ✨ Complete All (Prototype)
-        </button>
-      </div>
-
       <div className={`bingo-grid${pct === 100 ? ' all-complete' : ''}${lineAchieved ? ' bingo-line-achieved' : ''}`}>
         {mainCells.map((cfg, idx) => {
           const cellState = state.main[cfg.id];
@@ -429,18 +399,6 @@ export default function Home() {
                   </div>
                 </div>
               </div>
-              {/* 프로토타입: 업로드 취급 버튼 */}
-              {!cellState?.done && !isKyotoBox5 && (
-                <button
-                  className="dummy-upload-btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDummyUpload(cfg.id);
-                  }}
-                >
-                  📸
-                </button>
-              )}
             </div>
           );
         })}
@@ -521,8 +479,9 @@ export default function Home() {
             ? 'main'  // MainPlace has 'id' field
             : 'food'  // FoodPlace has 'menu' field
         }
-        photo={selectedCell ? state.main[selectedCell.id]?.photo ?? null : null}
+        photos={selectedCell ? (state.main[selectedCell.id]?.photos || []) : []}
         onUpload={handleBottomSheetUpload}
+        onDeletePhoto={handlePhotoDelete}
         userId={userId}
         boxNumber={selectedCellIndex !== null ? selectedCellIndex + 1 : undefined}
         foodRestaurants={

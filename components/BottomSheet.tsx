@@ -6,7 +6,8 @@ import { CellConfig } from '@/lib/types';
 import { MainPlace, FoodPlace } from '@/lib/sheets';
 import { useI18n } from './I18nProvider';
 import { cellLabel, cellDescription } from '@/lib/i18n';
-import UploadButton from './UploadButton';
+import MultiPhotoUploadButton from './MultiPhotoUploadButton';
+import PhotoGallery from './PhotoGallery';
 
 interface BottomSheetProps {
   isOpen: boolean;
@@ -14,8 +15,9 @@ interface BottomSheetProps {
   config: CellConfig | null;
   dbData: MainPlace | FoodPlace | null;
   category: 'main' | 'food';
-  photo: string | null;
-  onUpload: (photo: string) => void;
+  photos: string[];  // CHANGED: from photo to photos array
+  onUpload: (photos: string[]) => void;  // CHANGED: accepts array
+  onDeletePhoto?: (index: number) => void;  // NEW
   userId?: string;
   boxNumber?: number;
   foodRestaurants?: Array<{
@@ -33,8 +35,9 @@ export default function BottomSheet({
   config,
   dbData,
   category,
-  photo,
+  photos,  // CHANGED
   onUpload,
+  onDeletePhoto,
   userId,
   boxNumber,
   foodRestaurants = [],
@@ -42,6 +45,9 @@ export default function BottomSheet({
   const { lang } = useI18n();
   const overlayRef = useRef<HTMLDivElement>(null);
   const cacheBuster = useMemo(() => `?v=${Date.now()}`, []);
+
+  const hasPhotos = photos.length > 0;
+  const remainingSlots = Math.max(0, 3 - photos.length);
 
   // Helper to check if dbData is MainPlace
   const isMainPlace = (data: MainPlace | FoodPlace | null): data is MainPlace => {
@@ -85,20 +91,48 @@ export default function BottomSheet({
           {category === 'food' ? (
             /* ===== FOOD 바텀시트 ===== */
             <>
-              {/* 업로드 버튼 */}
-              <div className="bottom-sheet-header">
-                <UploadButton
-                  hasPhoto={!!photo}
-                  onUpload={(p) => {
-                    onUpload(p);
-                    setTimeout(() => onClose(), 300);
-                  }}
-                  userId={userId}
-                  uploadPrefix="food"
-                  boxNumber={boxNumber}
-                  label={photo ? '📷 Replace Photo' : '📷 Upload Photo'}
-                />
-              </div>
+              {/* Photo Gallery */}
+              {hasPhotos && (
+                <div style={{ marginBottom: '16px' }}>
+                  <PhotoGallery
+                    photos={photos}
+                    onDelete={onDeletePhoto}
+                    editable={true}
+                  />
+                  <div style={{ display: 'flex', justifyContent: 'center', marginTop: '12px' }}>
+                    <MultiPhotoUploadButton
+                      remainingSlots={remainingSlots}
+                      onUpload={(newPhotos) => {
+                        onUpload(newPhotos);
+                        if (newPhotos.length > 0) {
+                          setTimeout(() => onClose(), 300);
+                        }
+                      }}
+                      userId={userId}
+                      uploadPrefix="food"
+                      cellId={config?.id}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Upload Button (no photos yet) */}
+              {!hasPhotos && (
+                <div className="bottom-sheet-header">
+                  <MultiPhotoUploadButton
+                    remainingSlots={remainingSlots}
+                    onUpload={(newPhotos) => {
+                      onUpload(newPhotos);
+                      if (newPhotos.length > 0) {
+                        setTimeout(() => onClose(), 300);
+                      }
+                    }}
+                    userId={userId}
+                    uploadPrefix="food"
+                    cellId={config?.id}
+                  />
+                </div>
+              )}
 
               {/* 이모지 + 이름 */}
               <div className="food-sheet-hero">
@@ -152,40 +186,65 @@ export default function BottomSheet({
               )}
             </>
           ) : (
-            /* ===== MAIN 바텀시트 (기존 그대로) ===== */
+            /* ===== MAIN 바텀시트 ===== */
             <>
-              {/* 0. 상단: 좌측 구글맵 + 우측 업로드 */}
-              <div className="bottom-sheet-header">
-                {dbData && isMainPlace(dbData) && dbData.place && (
-                  <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(dbData.place)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="bottom-sheet-location-chip"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-                    </svg>
-                    Map
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M7 17L17 7M17 7H7M17 7v10"/>
-                    </svg>
-                  </a>
-                )}
-                <UploadButton
-                  hasPhoto={!!photo}
-                  onUpload={(p) => {
-                    onUpload(p);
-                    setTimeout(() => onClose(), 300);
-                  }}
-                  userId={userId}
-                  uploadPrefix="main"
-                  boxNumber={boxNumber}
-                  label={photo ? '📷 Replace Photo' : '📷 Upload Photo'}
-                />
-              </div>
+              {/* 0. 상단: 좌측 구글맵 + 우측 업로드 (사진 없을 때) */}
+              {!hasPhotos && (
+                <div className="bottom-sheet-header">
+                  {dbData && isMainPlace(dbData) && dbData.place && (
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(dbData.place)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bottom-sheet-location-chip"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                      </svg>
+                      Map
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M7 17L17 7M17 7H7M17 7v10"/>
+                      </svg>
+                    </a>
+                  )}
+                  <MultiPhotoUploadButton
+                    remainingSlots={remainingSlots}
+                    onUpload={(newPhotos) => {
+                      onUpload(newPhotos);
+                      if (newPhotos.length > 0) {
+                        setTimeout(() => onClose(), 300);
+                      }
+                    }}
+                    userId={userId}
+                    uploadPrefix="main"
+                    cellId={config?.id}
+                  />
+                </div>
+              )}
 
-              {/* 1. 이미지 */}
+              {/* 1. Photo Gallery */}
+              {hasPhotos && (
+                <div style={{ marginBottom: '16px' }}>
+                  <PhotoGallery
+                    photos={photos}
+                    onDelete={onDeletePhoto}
+                    editable={true}
+                  />
+                  <div style={{ display: 'flex', justifyContent: 'center', marginTop: '12px' }}>
+                    <MultiPhotoUploadButton
+                      remainingSlots={remainingSlots}
+                      onUpload={(newPhotos) => {
+                        onUpload(newPhotos);
+                      }}
+                      userId={userId}
+                      uploadPrefix="main"
+                      cellId={config?.id}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* 2. 참고 이미지 */}
               <div className="bottom-sheet-images">
                 {dbData && isMainPlace(dbData) && dbData.image1 && (
                   <div className="bottom-sheet-image-item">
