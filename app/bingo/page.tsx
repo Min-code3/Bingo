@@ -14,14 +14,17 @@ import BottomSheet from '@/components/BottomSheet';
 import Notification from '@/components/Notification';
 import Celebration from '@/components/Celebration';
 import Confetti from '@/components/Confetti';
+import FreePhotoUpload from '@/components/FreePhotoUpload';
 
 export default function Home() {
-  const { state, hydrated, cityId, cellImages, userId, uploadMain, uploadFood, reset } = useBingoState();
+  const { state, hydrated, cityId, cellImages, userId, uploadMain, uploadFood, reset, addFreePhotos, canFreeUpload, freeRemainingSlots } = useBingoState();
   const { lang, t } = useI18n();
+  const [mounted, setMounted] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
   const [bottomSheetOpen, setBottomSheetOpen] = useState(false);
   const [selectedCell, setSelectedCell] = useState<CellConfig | null>(null);
+  const [selectedCellIndex, setSelectedCellIndex] = useState<number | null>(null);
   const [selectedDbData, setSelectedDbData] = useState<MainPlace | FoodPlace | null>(null);
   const [recentlyUploaded, setRecentlyUploaded] = useState<Set<string>>(new Set());
   const [mainPlaces, setMainPlaces] = useState<MainPlace[]>([]);
@@ -31,6 +34,9 @@ export default function Home() {
   const [pageLoading, setPageLoading] = useState(true);
   const prevPctRef = useRef<number | null>(null); // null = 아직 초기화 안됨
   const prevLinesRef = useRef<number | null>(null); // 빙고 라인 수 추적
+  const [videoConsent, setVideoConsent] = useState(false);
+  const [isCreatingVideo, setIsCreatingVideo] = useState(false);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
 
   const city = CITIES[cityId];
   const mainCells = city?.mainCells ?? [];
@@ -70,6 +76,11 @@ export default function Home() {
     prevLinesRef.current = bingoLinesCount;
   }, [bingoLinesCount, hydrated]);
 
+  // Set mounted state
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // Fetch DB data on mount
   useEffect(() => {
     const fetchData = async () => {
@@ -95,31 +106,42 @@ export default function Home() {
     fetchData();
   }, []);
 
-  // Helper: find DB data for a cell by box number and city
-  const findDbData = (boxIndex: number): MainPlace | FoodPlace | null => {
-    const boxNumber = String(boxIndex + 1);
-    console.log(`[findDbData] Looking for box ${boxNumber} in city ${cityId}`);
+  // Check if bingo video is ready
+  useEffect(() => {
+    if (!userId || !hydrated) return;
 
-    // Debug: show all available data for this city
-    const cityMainPlaces = mainPlaces.filter(p => p.area.toLowerCase() === cityId.toLowerCase());
-    const cityFoodPlaces = foodPlaces.filter(p => p.area.toLowerCase() === cityId.toLowerCase());
-    console.log(`[findDbData] Available mainPlaces for ${cityId}:`, cityMainPlaces.map(p => ({ box: p.box, name: p.name, nameKr: p.nameKr })));
-    console.log(`[findDbData] Available foodPlaces for ${cityId}:`, cityFoodPlaces.map(p => ({ box: p.box, menu: p.menu, nameEn: p.nameEn, nameKr: p.nameKr })));
+    const checkVideo = async () => {
+      try {
+        const res = await fetch(`/api/video?userId=${userId}&cityId=${cityId}`);
+        const data = await res.json();
+
+        if (data.ready && data.videoUrl) {
+          setVideoUrl(data.videoUrl);
+        }
+      } catch (error) {
+        console.error('Failed to check video:', error);
+      }
+    };
+
+    checkVideo();
+  }, [userId, cityId, hydrated]);
+
+  // Helper: find DB data for a cell by box number and city
+  const findDbData = useCallback((boxIndex: number): MainPlace | FoodPlace | null => {
+    const boxNumber = String(boxIndex + 1);
 
     // First try main places
     const mainPlace = mainPlaces.find(
       p => p.box === boxNumber && p.area.toLowerCase() === cityId.toLowerCase()
     );
-    console.log(`[findDbData] Found mainPlace:`, mainPlace);
     if (mainPlace) return mainPlace;
 
     // Then try food places by box number
     const foodPlace = foodPlaces.find(
       p => p.box === boxNumber && p.area.toLowerCase() === cityId.toLowerCase()
     );
-    console.log(`[findDbData] Found foodPlace:`, foodPlace);
     return foodPlace || null;
-  };
+  }, [mainPlaces, foodPlaces, cityId]);
 
   // 교토의 경우 box 5 (food-1)는 자동 완성하지 않음 - 사용자가 탭해야 함
 
@@ -165,8 +187,8 @@ export default function Home() {
 
     // Find DB data for this cell
     const dbData = findDbData(idx);
-    console.log(`[handleCellClick] Cell ${cfg.id} (box ${idx + 1}), dbData:`, dbData);
     setSelectedCell(cfg);
+    setSelectedCellIndex(idx);
     setSelectedDbData(dbData);
     setBottomSheetOpen(true);
   }, [cityId, state.main, uploadMain, findDbData]);
@@ -217,11 +239,32 @@ export default function Home() {
     }
   }, [state.main]);
 
+  // 비디오 제작 취소
+  const handleCancelVideo = useCallback(() => {
+    setIsCreatingVideo(false);
+    setVideoConsent(false);
+    // TODO: 실제 비디오 제작 취소 API 호출
+    console.log('Cancelled video creation');
+  }, []);
+
+  // 체크박스 클릭 시 자동으로 비디오 제작 시작
+  useEffect(() => {
+    if (videoConsent && !isCreatingVideo) {
+      setIsCreatingVideo(true);
+      // TODO: 실제 비디오 제작 API 호출
+      console.log('Creating video...');
+    }
+  }, [videoConsent, isCreatingVideo]);
+
   if (!hydrated) {
     return (
       <>
-        <h2 className="page-title">{t('main.bingo', { city: cityLabel(cityId, lang) })}</h2>
-        <p className="page-subtitle">{t('main.loading')}</p>
+        <h2 className="page-title" suppressHydrationWarning>
+          {mounted ? t('main.bingo', { city: cityLabel(cityId, lang) }) : `${cityLabel(cityId, 'en')} Bingo`}
+        </h2>
+        <p className="page-subtitle" suppressHydrationWarning>
+          {mounted ? t('main.loading') : 'Loading...'}
+        </p>
       </>
     );
   }
@@ -238,8 +281,61 @@ export default function Home() {
       <h2 className="page-title">{t('main.bingo', { city: cityLabel(cityId, lang) })}</h2>
       <p className="page-subtitle">{t('main.subtitle')}</p>
 
-      {/* 프로토타입 버튼 */}
+      {/* 동영상 준비 배너 */}
+      {videoUrl && (
+        <div style={{
+          margin: '12px auto 16px',
+          maxWidth: '600px',
+          padding: '16px',
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          borderRadius: '12px',
+          boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
+          animation: 'slideDown 0.5s ease-out'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+            <span style={{ fontSize: '32px' }}>🎉</span>
+            <div style={{ flex: 1 }}>
+              <h3 style={{ margin: 0, color: 'white', fontSize: '18px', fontWeight: 'bold' }}>
+                {lang === 'ko' ? '빙고 동영상이 준비되었습니다!' : 'Your Bingo Video is Ready!'}
+              </h3>
+              <p style={{ margin: '4px 0 0', color: 'rgba(255,255,255,0.9)', fontSize: '14px' }}>
+                {lang === 'ko' ? '여행의 추억을 동영상으로 만나보세요' : 'Watch your travel memories come to life'}
+              </p>
+            </div>
+          </div>
+          <a
+            href={videoUrl}
+            download
+            style={{
+              display: 'block',
+              width: '100%',
+              padding: '12px',
+              background: 'white',
+              color: '#667eea',
+              borderRadius: '8px',
+              textAlign: 'center',
+              textDecoration: 'none',
+              fontWeight: 'bold',
+              fontSize: '16px',
+              transition: 'transform 0.2s',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+          >
+            📥 {lang === 'ko' ? '동영상 다운로드' : 'Download Video'}
+          </a>
+        </div>
+      )}
+
+      {/* 자유 사진 업로드 버튼 */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+        <FreePhotoUpload
+          remainingSlots={freeRemainingSlots}
+          canUpload={canFreeUpload}
+          onUpload={addFreePhotos}
+          userId={userId}
+        />
+        {/* 프로토타입 버튼 */}
         <button
           className="prototype-btn"
           onClick={handleCompleteAll}
@@ -267,6 +363,7 @@ export default function Home() {
             <div key={cfg.id} className="bingo-cell-wrapper">
               <div
                 className={`bingo-cell${cellState?.done ? ' completed' : ''}${isLine ? ' bingo-line' : ''}${isKyotoBox5 ? ' box-5-special' : ''}`}
+                data-cell-id={`box-${idx + 1}`}
                 onClick={() => handleCellClick(cfg, idx)}
               >
                 <div className="flip-card">
@@ -363,10 +460,44 @@ export default function Home() {
             ? (lang === 'en' ? '✨ Your highlight video is waiting...' : '✨ 하이라이트 영상이 기다리고 있어요...')
             : bingoLinesCount === 1
             ? (lang === 'en' ? '🎬 Almost there! One more line!' : '🎬 거의 다 왔어요! 1줄만 더!')
-            : (lang === 'en' ? '🎉 Your video will be created!' : '🎉 영상이 생성됩니다!')}
+            : isCreatingVideo
+            ? (lang === 'en' ? '🎬 Creating your video...' : '🎬 비디오 제작중...')
+            : (lang === 'en' ? '🎉 Video creation available' : '🎉 비디오 제작 가능')}
         </span>
         <span className="bingo-lines-count">{bingoLinesCount < 2 ? `${bingoLinesCount}/2` : ''}</span>
       </div>
+
+      {/* 비디오 제작 섹션 - 2줄 완성 시 표시 */}
+      {bingoLinesCount >= 2 && (
+        <>
+          {isCreatingVideo ? (
+            <div style={{ width: '100%', maxWidth: '480px', marginTop: '8px', display: 'flex', justifyContent: 'flex-start' }}>
+              <span
+                className="video-cancel-btn"
+                onClick={handleCancelVideo}
+                style={{ cursor: 'pointer' }}
+              >
+                {lang === 'en' ? 'Cancel Creation' : '제작 취소'}
+              </span>
+            </div>
+          ) : (
+            <div className="video-creation-section">
+              <label className="video-consent-checkbox">
+                <input
+                  type="checkbox"
+                  checked={videoConsent}
+                  onChange={(e) => setVideoConsent(e.target.checked)}
+                />
+                <span>
+                  {lang === 'en'
+                    ? 'I agree to use my photos for video creation'
+                    : '사진을 영상 제작에 사용하는 것에 동의합니다'}
+                </span>
+              </label>
+            </div>
+          )}
+        </>
+      )}
 
       <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
         <button
@@ -393,6 +524,7 @@ export default function Home() {
         photo={selectedCell ? state.main[selectedCell.id]?.photo ?? null : null}
         onUpload={handleBottomSheetUpload}
         userId={userId}
+        boxNumber={selectedCellIndex !== null ? selectedCellIndex + 1 : undefined}
         foodRestaurants={
           selectedDbData && 'menu' in selectedDbData
             ? foodPlaces
@@ -402,6 +534,7 @@ export default function Home() {
                   nameLocal: fp.nameKr,
                   description: lang === 'en' ? fp.descEn : fp.descKr,
                   mapQuery: fp.nameEn,
+                  imageUrl: fp.imageUrl,
                 }))
             : []
         }

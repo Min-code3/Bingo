@@ -4,14 +4,14 @@ import { Noto_Serif_KR } from 'next/font/google';
 import { I18nProvider } from '@/components/I18nProvider';
 import { BingoProvider } from '@/components/BingoProvider';
 import Sidebar from '@/components/Sidebar';
-import LanguageToggle from '@/components/LanguageToggle';
 import GlobalLogger from '@/components/GlobalLogger';
+import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css';
 import './globals.css';
 
 const notoSerifKR = Noto_Serif_KR({
   subsets: ['latin'],
-  weight: ['400', '700', '900'],
-  variable: '--font-noto-serif-kr',
+  weight: ['700', '900'],
+  variable: '--font-heading',
 });
 
 export const metadata: Metadata = {
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={notoSerifKR.className} suppressHydrationWarning>
+      <body className={notoSerifKR.variable} suppressHydrationWarning>
         <I18nProvider>
           <Suspense fallback={<div>Loading...</div>}>
             <BingoProvider>
@@ -30,7 +30,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Sidebar />
               <main className="main-content">
                 {children}
-                <LanguageToggle />
               </main>
             </BingoProvider>
           </Suspense>

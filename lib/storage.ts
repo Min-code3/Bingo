@@ -38,3 +38,23 @@ export function saveState(state: BingoState, cityId: string = 'kyoto'): void {
     localStorage.setItem(SKEY_PREFIX + cityId, JSON.stringify(state));
   } catch { /* quota exceeded */ }
 }
+
+// === Free Photos ===
+const FREE_PHOTOS_PREFIX = 'travel-bingo-free-photos-';
+export const MAX_FREE_PHOTOS = 3;
+
+export function loadFreePhotos(cityId: string): string[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(FREE_PHOTOS_PREFIX + cityId);
+    if (raw) return JSON.parse(raw) as string[];
+  } catch { /* ignore */ }
+  return [];
+}
+
+export function saveFreePhotos(photos: string[], cityId: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(FREE_PHOTOS_PREFIX + cityId, JSON.stringify(photos));
+  } catch { /* quota exceeded */ }
+}

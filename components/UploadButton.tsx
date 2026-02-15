@@ -11,10 +11,11 @@ interface UploadButtonProps {
   onUpload: (photo: string) => void;
   userId?: string; // Optional: if provided, uploads to Supabase
   uploadPrefix?: string; // Optional: prefix for uploaded files (e.g., "food", "main")
+  boxNumber?: number; // Optional: box number (1-25) for logging which cell was uploaded
   label?: string; // Optional: custom label for button
 }
 
-export default function UploadButton({ hasPhoto, onUpload, userId, uploadPrefix = 'photo', label }: UploadButtonProps) {
+export default function UploadButton({ hasPhoto, onUpload, userId, uploadPrefix = 'photo', boxNumber, label }: UploadButtonProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const { t } = useI18n();
   const [uploading, setUploading] = useState(false);
@@ -32,6 +33,7 @@ export default function UploadButton({ hasPhoto, onUpload, userId, uploadPrefix 
         file_size: file.size,
         file_type: file.type,
         upload_prefix: uploadPrefix,
+        box_number: boxNumber,
         has_user_id: !!userId,
         timestamp: nowTokyo(),
       },
@@ -41,7 +43,7 @@ export default function UploadButton({ hasPhoto, onUpload, userId, uploadPrefix 
       const reader = new FileReader();
       reader.onload = async (ev) => {
         const dataUrl = ev.target?.result as string;
-        const resized = await resizeImage(dataUrl, 300); // Reduced to 300 for faster upload
+        const resized = await resizeImage(dataUrl, 500); // Balanced size for quality and speed
 
         // Upload to Supabase if userId is provided
         if (userId) {
@@ -55,6 +57,7 @@ export default function UploadButton({ hasPhoto, onUpload, userId, uploadPrefix 
               metadata: {
                 storage: 'supabase',
                 upload_prefix: uploadPrefix,
+                box_number: boxNumber,
                 timestamp: nowTokyo(),
               },
             });
@@ -67,6 +70,7 @@ export default function UploadButton({ hasPhoto, onUpload, userId, uploadPrefix 
               metadata: {
                 error: String(error),
                 upload_prefix: uploadPrefix,
+                box_number: boxNumber,
                 timestamp: nowTokyo(),
               },
             });

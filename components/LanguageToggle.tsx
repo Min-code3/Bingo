@@ -11,7 +11,9 @@ export default function LanguageToggle() {
   return (
     <button className="lang-toggle-btn" onClick={toggle} aria-label="Toggle language">
       <span className="lang-toggle-icon">🌐</span>
-      <span className="lang-toggle-label">{lang === 'en' ? 'EN' : 'KO'}</span>
+      <span className="lang-toggle-label" suppressHydrationWarning>
+        {lang === 'en' ? 'EN' : 'KO'}
+      </span>
     </button>
   );
 }

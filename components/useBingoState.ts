@@ -4,7 +4,7 @@ import { useContext, useCallback } from 'react';
 import { BingoContext } from './BingoProvider';
 
 export function useBingoState() {
-  const { state, dispatch, hydrated, cityId, setCityId, cellImages, userId } = useContext(BingoContext);
+  const { state, dispatch, hydrated, cityId, setCityId, cellImages, userId, freePhotos, addFreePhotos, canFreeUpload, freeRemainingSlots } = useContext(BingoContext);
 
   const uploadMain = useCallback((id: string, photo: string) => {
     dispatch({ type: 'UPLOAD_MAIN', id, photo });
@@ -18,5 +18,5 @@ export function useBingoState() {
     dispatch({ type: 'RESET', cityId });
   }, [dispatch, cityId]);
 
-  return { state, hydrated, cityId, setCityId, cellImages, userId, uploadMain, uploadFood, reset };
+  return { state, hydrated, cityId, setCityId, cellImages, userId, uploadMain, uploadFood, reset, freePhotos, addFreePhotos, canFreeUpload, freeRemainingSlots };
 }

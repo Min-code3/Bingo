@@ -84,6 +84,13 @@ const ui = {
     'tutorial.ready': 'Ready to explore?',
     'tutorial.tap': 'Tap to start your bingo',
     'tutorial.notification': 'Let\'s make bingo!',
+
+    // Free photo
+    'free.uploading': 'Uploading...',
+    'free.button': 'Any photo you love',
+    'free.album': 'My Album',
+    'free.empty': 'No photos yet',
+    'free.count': '{n} / 3',
   },
   ko: {
     'main.bingo': '{city} 빙고',
@@ -142,6 +149,13 @@ const ui = {
     'tutorial.ready': '투어 준비되셨나요?',
     'tutorial.tap': '탭해서 빙고 시작하기',
     'tutorial.notification': '빙고를 만들어봐요!',
+
+    // Free photo
+    'free.uploading': '업로드 중...',
+    'free.button': '나의 최애 사진',
+    'free.album': '나의 앨범',
+    'free.empty': '아직 사진이 없어요',
+    'free.count': '{n} / 3',
   },
 } as const;
 

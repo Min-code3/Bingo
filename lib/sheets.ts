@@ -57,8 +57,10 @@ export interface MainPlace {
   box: string;
   name: string;
   nameKr: string;
+  place: string;
   image1: string;
   image2: string;
+  image3: string;
   desc1En: string;
   desc1Kr: string;
   desc2En: string;
@@ -67,6 +69,14 @@ export interface MainPlace {
   desc3Kr: string;
   desc4En: string;
   desc4Kr: string;
+  desc5En: string;
+  desc5Kr: string;
+  klookName1: string;
+  klookName1Kr: string;
+  klookLink1: string;
+  klookName2: string;
+  klookName2Kr: string;
+  klookLink2: string;
 }
 
 export async function fetchFoodPlaces(): Promise<FoodPlace[]> {
@@ -119,16 +129,26 @@ export async function fetchMainPlaces(): Promise<MainPlace[]> {
       box: (r[2] ?? '').trim(),
       name: (r[3] ?? '').trim(),
       nameKr: (r[4] ?? '').trim(),
-      image1: (r[5] ?? '').trim(),
-      image2: (r[6] ?? '').trim(),
-      desc1En: (r[7] ?? '').trim(),
-      desc1Kr: (r[8] ?? '').trim(),
-      desc2En: (r[9] ?? '').trim(),
-      desc2Kr: (r[10] ?? '').trim(),
-      desc3En: (r[11] ?? '').trim(),
-      desc3Kr: (r[12] ?? '').trim(),
-      desc4En: (r[13] ?? '').trim(),
-      desc4Kr: (r[14] ?? '').trim(),
+      place: (r[5] ?? '').trim(),
+      image1: (r[6] ?? '').trim(),
+      image2: (r[7] ?? '').trim(),
+      image3: (r[8] ?? '').trim(),
+      desc1En: (r[9] ?? '').trim(),
+      desc1Kr: (r[10] ?? '').trim(),
+      desc2En: (r[11] ?? '').trim(),
+      desc2Kr: (r[12] ?? '').trim(),
+      desc3En: (r[13] ?? '').trim(),
+      desc3Kr: (r[14] ?? '').trim(),
+      desc4En: (r[15] ?? '').trim(),
+      desc4Kr: (r[16] ?? '').trim(),
+      desc5En: (r[17] ?? '').trim(),
+      desc5Kr: (r[18] ?? '').trim(),
+      klookName1: (r[19] ?? '').trim(),
+      klookName1Kr: (r[20] ?? '').trim(),
+      klookLink1: (r[21] ?? '').trim(),
+      klookName2: (r[22] ?? '').trim(),
+      klookName2Kr: (r[23] ?? '').trim(),
+      klookLink2: (r[24] ?? '').trim(),
     });
   }
   return places;

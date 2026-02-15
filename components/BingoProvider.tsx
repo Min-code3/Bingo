@@ -1,8 +1,8 @@
 'use client';
 
-import React, { createContext, useReducer, useEffect, useRef } from 'react';
+import React, { createContext, useReducer, useEffect, useRef, useCallback } from 'react';
 import { BingoState, BingoAction } from '@/lib/types';
-import { defaultState, loadState, saveState } from '@/lib/storage';
+import { defaultState, loadState, saveState, loadFreePhotos, saveFreePhotos, MAX_FREE_PHOTOS } from '@/lib/storage';
 import { isFoodBingoComplete } from '@/lib/bingo-logic';
 import { FOOD_ENTRANCE_IDS, CITIES } from '@/lib/constants';
 import { AllCellImages, CellImages } from '@/lib/sheets';
@@ -38,6 +38,10 @@ interface BingoContextValue {
   setCityId: (id: string) => void;
   cellImages: CellImages | null;
   userId: string | undefined;
+  freePhotos: string[];
+  addFreePhotos: (urls: string[]) => void;
+  canFreeUpload: boolean;
+  freeRemainingSlots: number;
 }
 
 export const BingoContext = createContext<BingoContextValue>({
@@ -48,6 +52,10 @@ export const BingoContext = createContext<BingoContextValue>({
   setCityId: () => {},
   cellImages: null,
   userId: undefined,
+  freePhotos: [],
+  addFreePhotos: () => {},
+  canFreeUpload: true,
+  freeRemainingSlots: MAX_FREE_PHOTOS,
 });
 
 export function BingoProvider({ children }: { children: React.ReactNode }) {
@@ -56,12 +64,14 @@ export function BingoProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(bingoReducer, defaultState());
   const [hydrated, setHydrated] = React.useState(false);
   const [allImages, setAllImages] = React.useState<AllCellImages | null>(null);
+  const [freePhotos, setFreePhotos] = React.useState<string[]>([]);
   const isInitial = useRef(true);
 
   // Load state for current city
   useEffect(() => {
     const saved = loadState(cityId);
     dispatch({ type: 'LOAD', state: saved });
+    setFreePhotos(loadFreePhotos(cityId));
     setHydrated(true);
   }, [cityId]);
 
@@ -85,8 +95,22 @@ export function BingoProvider({ children }: { children: React.ReactNode }) {
 
   const cellImages = allImages?.[cityId] ?? null;
 
+  // Free photos
+  const addFreePhotos = useCallback((urls: string[]) => {
+    setFreePhotos(prev => {
+      const remaining = MAX_FREE_PHOTOS - prev.length;
+      if (remaining <= 0) return prev;
+      const next = [...prev, ...urls.slice(0, remaining)];
+      saveFreePhotos(next, cityId);
+      return next;
+    });
+  }, [cityId]);
+
+  const canFreeUpload = freePhotos.length < MAX_FREE_PHOTOS;
+  const freeRemainingSlots = MAX_FREE_PHOTOS - freePhotos.length;
+
   return (
-    <BingoContext.Provider value={{ state, dispatch, hydrated, cityId, setCityId, cellImages, userId }}>
+    <BingoContext.Provider value={{ state, dispatch, hydrated, cityId, setCityId, cellImages, userId, freePhotos, addFreePhotos, canFreeUpload, freeRemainingSlots }}>
       {children}
     </BingoContext.Provider>
   );
