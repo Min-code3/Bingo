@@ -2,17 +2,40 @@ import { BingoState, CellState } from './types';
 import { CITIES, FOOD_ENTRANCE_IDS, CityConfig } from './constants';
 
 const SKEY_PREFIX = 'travel-bingo-';
+export const MAX_CELL_PHOTOS = 3;
+
+// Migration: Convert old photo format to new photos array
+function migrateCellState(cell: CellState): CellState {
+  // If photos array exists, use it
+  if (cell.photos && cell.photos.length > 0) {
+    return cell;
+  }
+
+  // If only old photo field exists, migrate to array
+  if (cell.photo) {
+    return {
+      ...cell,
+      photos: [cell.photo]
+    };
+  }
+
+  // No photos at all
+  return {
+    ...cell,
+    photos: []
+  };
+}
 
 export function defaultState(cityId: string = 'kyoto'): BingoState {
   const city = CITIES[cityId];
   if (!city) return { main: {}, food: [] };
   const main: Record<string, CellState> = {};
   for (const id of [...city.placeIds, ...FOOD_ENTRANCE_IDS]) {
-    main[id] = { done: false, photo: null };
+    main[id] = { done: false, photo: null, photos: [] };
   }
   return {
     main,
-    food: city.foodCells.map(() => ({ done: false, photo: null })),
+    food: city.foodCells.map(() => ({ done: false, photo: null, photos: [] })),
   };
 }
 
@@ -23,9 +46,19 @@ export function loadState(cityId: string = 'kyoto'): BingoState {
     if (raw) {
       const parsed = JSON.parse(raw) as BingoState;
       const def = defaultState(cityId);
+
+      // Migrate main cells
       for (const id of Object.keys(def.main)) {
-        if (!parsed.main[id]) parsed.main[id] = { done: false, photo: null };
+        if (!parsed.main[id]) {
+          parsed.main[id] = { done: false, photo: null, photos: [] };
+        } else {
+          parsed.main[id] = migrateCellState(parsed.main[id]);
+        }
       }
+
+      // Migrate food cells
+      parsed.food = parsed.food.map(migrateCellState);
+
       return parsed;
     }
   } catch { /* ignore */ }

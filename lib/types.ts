@@ -17,7 +17,8 @@ export interface CellConfig {
 
 export interface CellState {
   done: boolean;
-  photo: string | null;
+  photo: string | null;  // Keep for backward compatibility
+  photos?: string[];     // NEW: array of 0-3 photos
 }
 
 export interface BingoState {
@@ -28,6 +29,10 @@ export interface BingoState {
 export type BingoAction =
   | { type: 'UPLOAD_MAIN'; id: string; photo: string }
   | { type: 'UPLOAD_FOOD'; index: number; photo: string }
+  | { type: 'ADD_PHOTO_MAIN'; id: string; photo: string }
+  | { type: 'REMOVE_PHOTO_MAIN'; id: string; photoIndex: number }
+  | { type: 'ADD_PHOTO_FOOD'; index: number; photo: string }
+  | { type: 'REMOVE_PHOTO_FOOD'; index: number; photoIndex: number }
   | { type: 'COMPLETE_FOOD_MEGA' }
   | { type: 'RESET'; cityId?: string }
   | { type: 'LOAD'; state: BingoState };
