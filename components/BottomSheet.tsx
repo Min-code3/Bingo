@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useMemo } from 'react';
+import React, { useEffect, useRef, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { CellConfig } from '@/lib/types';
 import { MainPlace, FoodPlace } from '@/lib/sheets';
@@ -44,7 +44,11 @@ export default function BottomSheet({
 }: BottomSheetProps) {
   const { lang } = useI18n();
   const overlayRef = useRef<HTMLDivElement>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
   const cacheBuster = useMemo(() => `?v=${Date.now()}`, []);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStartY, setDragStartY] = useState(0);
+  const [dragOffset, setDragOffset] = useState(0);
 
   const hasPhotos = photos.length > 0;
   const remainingSlots = Math.max(0, 3 - photos.length);
@@ -59,6 +63,7 @@ export default function BottomSheet({
     return data !== null && 'menu' in data;
   };
 
+  // Handle body scroll lock
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -70,12 +75,66 @@ export default function BottomSheet({
     };
   }, [isOpen]);
 
+  // Handle browser back button
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handlePopState = (e: PopStateEvent) => {
+      e.preventDefault();
+      onClose();
+    };
+
+    // Push a dummy state when sheet opens
+    window.history.pushState({ bottomSheet: true }, '');
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      // Remove dummy state if sheet is closed programmatically
+      if (window.history.state?.bottomSheet) {
+        window.history.back();
+      }
+    };
+  }, [isOpen, onClose]);
+
   if (!config) return null;
 
   const handleOverlayClick = (e: React.MouseEvent) => {
     if (e.target === overlayRef.current) {
       onClose();
     }
+  };
+
+  // Touch drag handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    setDragStartY(touch.clientY);
+    setIsDragging(true);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging) return;
+
+    const touch = e.touches[0];
+    const diff = touch.clientY - dragStartY;
+
+    // Only allow dragging down
+    if (diff > 0) {
+      setDragOffset(diff);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (!isDragging) return;
+
+    setIsDragging(false);
+
+    // Close if dragged more than 100px
+    if (dragOffset > 100) {
+      onClose();
+    }
+
+    setDragOffset(0);
   };
 
   return (
@@ -85,7 +144,19 @@ export default function BottomSheet({
         className={`bottom-sheet-overlay ${isOpen ? 'open' : ''}`}
         onClick={handleOverlayClick}
       >
-        <div className={`bottom-sheet ${isOpen ? 'open' : ''}`}>
+        <div
+          ref={sheetRef}
+          className={`bottom-sheet ${isOpen ? 'open' : ''}`}
+          style={{
+            transform: isOpen
+              ? `translateY(${dragOffset}px)`
+              : 'translateY(100%)',
+            transition: isDragging ? 'none' : 'transform 0.3s ease'
+          }}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
           <div className="bottom-sheet-handle" />
 
           {category === 'food' ? (

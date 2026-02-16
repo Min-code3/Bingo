@@ -8,11 +8,10 @@ import { CITIES } from '@/lib/constants';
 import { cityLabel } from '@/lib/i18n';
 
 export default function Sidebar() {
-  const { state, hydrated, cityId, setCityId, reset, freePhotos } = useBingoState();
+  const { state, hydrated, cityId, setCityId, reset } = useBingoState();
   const { lang, setLang, t } = useI18n();
   const [menuOpen, setMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [viewingPhoto, setViewingPhoto] = useState<string | null>(null);
 
   React.useEffect(() => {
     setMounted(true);
@@ -33,18 +32,22 @@ export default function Sidebar() {
         <h1 className="sidebar-title" suppressHydrationWarning>
           {mounted ? t('sidebar.title') : 'Travel Bingo'}
         </h1>
-        <nav className="sidebar-nav">
+
+        {/* City Selector */}
+        <div className="sidebar-city-selector">
           {Object.values(CITIES).map(city => (
             <button
               key={city.id}
-              className={`nav-btn ${cityId === city.id ? 'active' : ''}`}
+              className={`sidebar-city-option ${cityId === city.id ? 'active' : ''}`}
               onClick={() => setCityId(city.id)}
               suppressHydrationWarning
             >
-              {mounted ? cityLabel(city.id, lang) : cityLabel(city.id, 'en')}
+              <span className="sidebar-city-radio" />
+              <span className="sidebar-city-label">{mounted ? cityLabel(city.id, lang) : cityLabel(city.id, 'en')}</span>
             </button>
           ))}
-        </nav>
+        </div>
+
         <div className="progress-section">
           <div className="progress-item">
             <span className="progress-label-title" suppressHydrationWarning>
@@ -73,22 +76,6 @@ export default function Sidebar() {
             <span className="progress-label">{picProg.done} / {picProg.total}</span>
           </div>
         </div>
-        {/* Free photo album */}
-        {freePhotos.length > 0 && (
-          <div className="sidebar-album">
-            <span className="sidebar-album-title" suppressHydrationWarning>
-              {mounted ? t('free.album') : 'My Album'} ({freePhotos.length}/3)
-            </span>
-            <div className="sidebar-album-grid">
-              {freePhotos.map((url, idx) => (
-                <div key={idx} className="sidebar-album-item" onClick={() => setViewingPhoto(url)}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={url} alt={`Photo ${idx + 1}`} />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
         <button className="reset-btn" onClick={handleReset} suppressHydrationWarning>
           {mounted ? t('sidebar.reset') : 'Reset'}
         </button>
@@ -114,48 +101,24 @@ export default function Sidebar() {
         </div>
       </div>
 
-      {/* Photo viewer overlay */}
-      {viewingPhoto && (
-        <div className="photo-viewer-overlay" onClick={() => setViewingPhoto(null)}>
-          <div className="photo-viewer-content" onClick={e => e.stopPropagation()}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={viewingPhoto} alt="Photo" />
-            <button className="photo-viewer-close" onClick={() => setViewingPhoto(null)}>✕</button>
-          </div>
-        </div>
-      )}
-
       {/* Mobile menu overlay */}
       {menuOpen && (
         <div className="mobile-menu-overlay" onClick={() => setMenuOpen(false)}>
           <div className="mobile-menu" onClick={e => e.stopPropagation()}>
             <h3 suppressHydrationWarning>{mounted ? t('sidebar.citySelect') : 'Select City'}</h3>
-            {Object.values(CITIES).map(city => (
-              <button
-                key={city.id}
-                className={`mobile-menu-item ${cityId === city.id ? 'active' : ''}`}
-                onClick={() => { setCityId(city.id); setMenuOpen(false); }}
-                suppressHydrationWarning
-              >
-                {mounted ? cityLabel(city.id, lang) : cityLabel(city.id, 'en')}
-              </button>
-            ))}
-            {/* Mobile free photo album */}
-            {freePhotos.length > 0 && (
-              <div className="mobile-album">
-                <span className="mobile-album-title" suppressHydrationWarning>
-                  {mounted ? t('free.album') : 'My Album'} ({freePhotos.length}/3)
-                </span>
-                <div className="mobile-album-grid">
-                  {freePhotos.map((url, idx) => (
-                    <div key={idx} className="mobile-album-item" onClick={() => { setViewingPhoto(url); setMenuOpen(false); }}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={url} alt={`Photo ${idx + 1}`} />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            <div className="mobile-city-selector">
+              {Object.values(CITIES).map(city => (
+                <button
+                  key={city.id}
+                  className={`mobile-city-option ${cityId === city.id ? 'active' : ''}`}
+                  onClick={() => { setCityId(city.id); setMenuOpen(false); }}
+                  suppressHydrationWarning
+                >
+                  <span className="mobile-city-radio" />
+                  <span className="mobile-city-label">{mounted ? cityLabel(city.id, lang) : cityLabel(city.id, 'en')}</span>
+                </button>
+              ))}
+            </div>
             <button className="mobile-menu-item reset" onClick={() => { handleReset(); setMenuOpen(false); }} suppressHydrationWarning>
               {mounted ? t('sidebar.reset') : 'Reset'}
             </button>

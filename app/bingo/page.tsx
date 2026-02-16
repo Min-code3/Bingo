@@ -17,7 +17,7 @@ import Celebration from '@/components/Celebration';
 import Confetti from '@/components/Confetti';
 
 export default function Home() {
-  const { state, hydrated, cityId, cellImages, userId, uploadMain, uploadFood, reset, addPhotoMain, removePhotoMain } = useBingoState();
+  const { state, hydrated, cityId, cellImages, userId, uploadMain, uploadFood, reset, addPhotoMain, removePhotoMain, setCityId } = useBingoState();
   const { lang, t } = useI18n();
   const [mounted, setMounted] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
@@ -34,6 +34,7 @@ export default function Home() {
   const [pageLoading, setPageLoading] = useState(true);
   const prevPctRef = useRef<number | null>(null); // null = 아직 초기화 안됨
   const prevLinesRef = useRef<number | null>(null); // 빙고 라인 수 추적
+  const prevCompletionRef = useRef<boolean>(false); // 100% 완성 추적
   const [videoConsent, setVideoConsent] = useState(false);
   const [isCreatingVideo, setIsCreatingVideo] = useState(false);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
@@ -73,7 +74,17 @@ export default function Home() {
       setLineAchieved(true);
       setTimeout(() => setLineAchieved(false), 1800);
 
-      // 2줄 완성 시 로그
+      // 모든 줄 완성 시 로그 (1줄, 2줄, 3줄 등)
+      logCustomEvent(userId, 'bingo_line_complete', {
+        metadata: {
+          city_id: cityId,
+          lines_count: bingoLinesCount,
+          progress_pct: pct,
+          timestamp: nowTokyo()
+        }
+      });
+
+      // 2줄 완성 시 특별 로그 (마일스톤)
       if (bingoLinesCount >= 2 && prevLinesRef.current < 2) {
         logCustomEvent(userId, 'bingo_2_lines_complete', {
           metadata: {
@@ -87,6 +98,23 @@ export default function Home() {
     }
     prevLinesRef.current = bingoLinesCount;
   }, [bingoLinesCount, hydrated, userId, cityId, pct]);
+
+  // 100% 전체 완성 로그
+  useEffect(() => {
+    if (!hydrated) return;
+    if (pct === 100 && !prevCompletionRef.current) {
+      logCustomEvent(userId, 'bingo_full_complete', {
+        metadata: {
+          city_id: cityId,
+          lines_count: bingoLinesCount,
+          timestamp: nowTokyo()
+        }
+      });
+      prevCompletionRef.current = true;
+    } else if (pct < 100) {
+      prevCompletionRef.current = false;
+    }
+  }, [pct, hydrated, userId, cityId, bingoLinesCount]);
 
   // Set mounted state
   useEffect(() => {
@@ -278,6 +306,20 @@ export default function Home() {
         </div>
       )}
 
+      {/* 도시 선택 UI */}
+      <div className="city-selector">
+        {Object.values(CITIES).map(city => (
+          <button
+            key={city.id}
+            className={`city-option ${cityId === city.id ? 'active' : ''}`}
+            onClick={() => setCityId(city.id)}
+          >
+            <span className="city-radio" />
+            <span className="city-label">{cityLabel(city.id, lang)}</span>
+          </button>
+        ))}
+      </div>
+
       <h2 className="page-title">{t('main.bingo', { city: cityLabel(cityId, lang) })}</h2>
       <p className="page-subtitle">{t('main.subtitle')}</p>
 
@@ -344,6 +386,7 @@ export default function Home() {
 
           return (
             <div key={cfg.id} className="bingo-cell-wrapper">
+              <div className="cell-click-guide">Click</div>
               <div
                 className={`bingo-cell${cellState?.done ? ' completed' : ''}${isLine ? ' bingo-line' : ''}${isKyotoBox5 ? ' box-5-special' : ''}`}
                 data-cell-id={`box-${idx + 1}`}

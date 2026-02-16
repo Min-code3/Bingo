@@ -51,7 +51,7 @@ export default function MultiPhotoUploadButton({
           const reader = new FileReader();
           reader.onload = async (ev) => {
             const dataUrl = ev.target?.result as string;
-            const resized = await resizeImage(dataUrl, 500);
+            const resized = await resizeImage(dataUrl, 1920);
 
             if (userId) {
               try {

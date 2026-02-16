@@ -18,12 +18,12 @@ export function resizeImage(dataUrl: string, maxSize: number): Promise<string> {
 
       ctx.drawImage(img, 0, 0, w, h);
 
-      // Use WebP if supported, otherwise JPEG with lower quality for faster upload
+      // Use WebP if supported, otherwise JPEG with high quality
       const isWebPSupported = canvas.toDataURL('image/webp').indexOf('data:image/webp') === 0;
       if (isWebPSupported) {
-        resolve(canvas.toDataURL('image/webp', 0.65)); // WebP with 0.65 quality (faster upload)
+        resolve(canvas.toDataURL('image/webp', 0.92)); // WebP with 0.92 quality (high quality)
       } else {
-        resolve(canvas.toDataURL('image/jpeg', 0.5)); // JPEG with 0.5 quality (faster upload)
+        resolve(canvas.toDataURL('image/jpeg', 0.88)); // JPEG with 0.88 quality (high quality)
       }
     };
     img.src = dataUrl;
