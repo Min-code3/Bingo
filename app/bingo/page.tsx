@@ -7,6 +7,7 @@ import { CITIES, FOOD_ENTRANCE_IDS } from '@/lib/constants';
 import { getBingoLineCells, getFoodProgress, isAllMainComplete, getMainProgress, countMainLines } from '@/lib/bingo-logic';
 import { generateDummyPhoto } from '@/lib/image-utils';
 import { cityLabel } from '@/lib/i18n';
+import { logCustomEvent, nowTokyo } from '@/lib/logger';
 import { CellConfig } from '@/lib/types';
 import { MainPlace, FoodPlace } from '@/lib/sheets';
 import BingoCell from '@/components/BingoCell';
@@ -71,9 +72,21 @@ export default function Home() {
     if (bingoLinesCount > prevLinesRef.current) {
       setLineAchieved(true);
       setTimeout(() => setLineAchieved(false), 1800);
+
+      // 2줄 완성 시 로그
+      if (bingoLinesCount >= 2 && prevLinesRef.current < 2) {
+        logCustomEvent(userId, 'bingo_2_lines_complete', {
+          metadata: {
+            city_id: cityId,
+            lines_count: bingoLinesCount,
+            progress_pct: pct,
+            timestamp: nowTokyo()
+          }
+        });
+      }
     }
     prevLinesRef.current = bingoLinesCount;
-  }, [bingoLinesCount, hydrated]);
+  }, [bingoLinesCount, hydrated, userId, cityId, pct]);
 
   // Set mounted state
   useEffect(() => {
@@ -444,7 +457,21 @@ export default function Home() {
                 <input
                   type="checkbox"
                   checked={videoConsent}
-                  onChange={(e) => setVideoConsent(e.target.checked)}
+                  onChange={(e) => {
+                    const isChecked = e.target.checked;
+                    setVideoConsent(isChecked);
+
+                    if (isChecked) {
+                      logCustomEvent(userId, 'video_consent_agreed', {
+                        metadata: {
+                          city_id: cityId,
+                          bingo_lines: bingoLinesCount,
+                          progress_pct: pct,
+                          timestamp: nowTokyo()
+                        }
+                      });
+                    }
+                  }}
                 />
                 <span>
                   {lang === 'en'
