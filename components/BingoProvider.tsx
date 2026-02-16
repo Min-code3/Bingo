@@ -178,9 +178,19 @@ export function BingoProvider({ children }: { children: React.ReactNode }) {
     if (hydrated) saveState(state, cityId);
   }, [state, hydrated, cityId]);
 
-  // Fetch all images once
+  // Fetch all images on mount (refresh on every page load)
   useEffect(() => {
-    fetch('/api/cells').then(r => r.json()).then(setAllImages).catch(() => setAllImages({}));
+    const fetchImages = async () => {
+      try {
+        const res = await fetch('/api/cells');
+        const data = await res.json();
+        setAllImages(data);
+      } catch (error) {
+        console.error('[BingoProvider] Failed to fetch cell images:', error);
+        setAllImages({});
+      }
+    };
+    fetchImages();
   }, []);
 
   const setCityId = (id: string) => {

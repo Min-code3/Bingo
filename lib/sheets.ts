@@ -173,7 +173,8 @@ export async function fetchAllCellImages(): Promise<AllCellImages> {
     const nameKr = r[5]?.trim();
     const imageUrl = r[6]?.trim();
 
-    if (!area || !category) continue;
+    // Skip rows with no ID (for A/B testing control)
+    if (!id || !area || !category) continue;
 
     const areaKey = area.toLowerCase();
     if (!result[areaKey]) {

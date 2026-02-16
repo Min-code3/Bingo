@@ -38,6 +38,7 @@ export async function logEvent(userId: string | undefined, event: LogEvent): Pro
       target: event.target,
       page_url: event.page_url || window.location.href,
       metadata: {
+        timestamp_kst: nowTokyo(), // 항상 도쿄/서울 시간 추가
         ...event.metadata,
         element_type: event.element_type,
         element_text: event.element_text,
@@ -76,6 +77,7 @@ export async function logEvent(userId: string | undefined, event: LogEvent): Pro
 /**
  * Extract useful information from a clicked element
  * Uses fallback strategy: ID > aria-label > alt > data-* > class > text content
+ * Also searches parent elements for context (e.g., data-cell-id)
  */
 export function extractElementInfo(element: HTMLElement): {
   target: string;
@@ -86,6 +88,22 @@ export function extractElementInfo(element: HTMLElement): {
   const className = element.className || '';
   const id = element.id || '';
 
+  // Search up to 5 levels for data-cell-id or other useful attributes
+  let contextElement: HTMLElement | null = element;
+  let cellId = '';
+  let dataIndex = '';
+
+  for (let i = 0; i < 5 && contextElement; i++) {
+    if (contextElement.dataset?.cellId) {
+      cellId = contextElement.dataset.cellId;
+      break;
+    }
+    if (contextElement.dataset?.index) {
+      dataIndex = contextElement.dataset.index;
+    }
+    contextElement = contextElement.parentElement;
+  }
+
   // Try multiple strategies to get a meaningful name
   let displayName = '';
 
@@ -93,23 +111,25 @@ export function extractElementInfo(element: HTMLElement): {
   if (id) {
     displayName = `#${id}`;
   }
-  // Priority 2: aria-label (for accessibility)
+  // Priority 2: Cell ID from parent (MOST IMPORTANT for bingo cells)
+  else if (cellId) {
+    displayName = `[${cellId}]`;
+  }
+  // Priority 3: aria-label (for accessibility)
   else if (element.getAttribute('aria-label')) {
     displayName = element.getAttribute('aria-label')!;
   }
-  // Priority 3: alt text (for images)
+  // Priority 4: alt text (for images)
   else if (tagName === 'img' && (element as HTMLImageElement).alt) {
     displayName = (element as HTMLImageElement).alt;
   }
-  // Priority 4: data attributes (data-cell-id, data-index, etc.)
-  else if (element.dataset.cellId) {
-    displayName = `cell-${element.dataset.cellId}`;
-  } else if (element.dataset.index) {
-    displayName = `index-${element.dataset.index}`;
+  // Priority 5: data-index
+  else if (dataIndex) {
+    displayName = `[index-${dataIndex}]`;
   }
-  // Priority 5: First meaningful class name
+  // Priority 6: First meaningful class name
   else if (className) {
-    const classes = className.split(' ').filter(c => c && !c.startsWith('css-'));
+    const classes = className.split(' ').filter(c => c && !c.startsWith('css-') && !c.includes('module'));
     if (classes.length > 0) {
       displayName = `.${classes[0]}`;
     }
@@ -186,6 +206,7 @@ export async function logEventWithBeacon(
       target: event.target,
       page_url: event.page_url || window.location.href,
       metadata: {
+        timestamp_kst: nowTokyo(), // 항상 도쿄/서울 시간 추가
         ...event.metadata,
         element_type: event.element_type,
         element_text: event.element_text,
@@ -243,6 +264,15 @@ export function logClick(
   element: HTMLElement,
   customActionType?: string
 ): void {
+  // Skip logging for meaningless clicks (body, html, etc.)
+  const tagName = element.tagName.toLowerCase();
+  if (tagName === 'body' || tagName === 'html') {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔴 Logger: Skipped body/html click');
+    }
+    return;
+  }
+
   const elementInfo = extractElementInfo(element);
 
   logEvent(userId, {
