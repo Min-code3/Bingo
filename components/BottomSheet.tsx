@@ -24,7 +24,7 @@ interface BottomSheetProps {
     name: string;
     nameLocal: string;
     description: string;
-    mapQuery: string;
+    mapUrl: string;
     imageUrl?: string;
   }>;
 }
@@ -205,12 +205,12 @@ export default function BottomSheet({
                 </div>
               )}
 
-              {/* 이모지 + 이름 */}
+              {/* 이모지 + 메뉴 이름 */}
               <div className="food-sheet-hero">
-                <span className="food-sheet-emoji">{config.icon}</span>
+                <span className="food-sheet-emoji">🍽️</span>
                 <h3 className="food-sheet-name">
                   {dbData && isFoodPlace(dbData)
-                    ? (lang === 'en' ? dbData.nameEn : dbData.nameKr)
+                    ? (lang === 'en' ? dbData.menu : (dbData.menuKr || dbData.menu))
                     : cellLabel(config, lang)}
                 </h3>
               </div>
@@ -220,8 +220,8 @@ export default function BottomSheet({
                 <div className="food-sheet-list">
                   {foodRestaurants.map((restaurant, idx) => (
                     <div key={idx} className="food-sheet-card">
-                      {restaurant.imageUrl && (
-                        <div className="food-sheet-card-img">
+                      <div className="food-sheet-card-img">
+                        {restaurant.imageUrl ? (
                           <Image
                             src={restaurant.imageUrl}
                             alt={restaurant.name}
@@ -230,8 +230,8 @@ export default function BottomSheet({
                             priority
                             style={{ objectFit: 'cover', borderRadius: '8px' }}
                           />
-                        </div>
-                      )}
+                        ) : null}
+                      </div>
                       <div className="food-sheet-card-info">
                         <div className="food-sheet-card-name">
                           {lang === 'en' ? restaurant.name : restaurant.nameLocal || restaurant.name}
@@ -240,7 +240,7 @@ export default function BottomSheet({
                           <div className="food-sheet-card-desc">{restaurant.description}</div>
                         )}
                         <a
-                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(restaurant.mapQuery)}`}
+                          href={restaurant.mapUrl}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="food-sheet-card-map"

@@ -38,6 +38,7 @@ export interface FoodPlace {
   area: string;
   box: string;
   menu: string;
+  menuKr: string;
   nameEn: string;
   nameKr: string;
   priority: number;
@@ -94,18 +95,19 @@ export async function fetchFoodPlaces(): Promise<FoodPlace[]> {
     places.push({
       area: (r[1] ?? '').trim().toLowerCase(),
       menu: (r[2] ?? '').trim(),
-      box: (r[3] ?? '').trim(),
-      nameEn: (r[4] ?? '').trim(),
-      nameKr: (r[5] ?? '').trim(),
-      priority: parseInt(r[6] ?? '99', 10) || 99,
-      descEn: (r[8] ?? '').trim(),
-      descKr: (r[9] ?? '').trim(),
-      floorEn: (r[10] ?? '').trim(),
-      floorKr: (r[11] ?? '').trim(),
-      closedEn: (r[12] ?? '').trim(),
-      closedKr: (r[13] ?? '').trim(),
-      imageUrl: (r[14] ?? '').trim(),
-      url: (r[15] ?? '').trim(),
+      menuKr: (r[3] ?? '').trim(),
+      box: (r[4] ?? '').trim(),
+      nameEn: (r[5] ?? '').trim(),
+      nameKr: (r[6] ?? '').trim(),
+      priority: parseInt(r[7] ?? '99', 10) || 99,
+      descEn: (r[9] ?? '').trim(),
+      descKr: (r[10] ?? '').trim(),
+      floorEn: (r[11] ?? '').trim(),
+      floorKr: (r[12] ?? '').trim(),
+      closedEn: (r[13] ?? '').trim(),
+      closedKr: (r[14] ?? '').trim(),
+      imageUrl: (r[15] ?? '').trim(),
+      url: (r[16] ?? '').trim(),
     });
   }
   return places;

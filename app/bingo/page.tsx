@@ -379,9 +379,8 @@ export default function Home() {
           const isRecent = recentlyUploaded.has(cfg.id);
           const shouldFlip = cellState?.done && !isRecent;
 
-          // DB 데이터 확인 - main인지 food인지 판단
-          const dbData = findDbData(idx);
-          const isFoodCategory = dbData && 'menu' in dbData;
+          // image DB category가 source of truth
+          const isFoodCategory = !!cellImages?.food[box];
           const cellImage = isFoodCategory ? cellImages?.food[box] : cellImages?.main[box];
 
           return (
@@ -545,9 +544,9 @@ export default function Home() {
         config={selectedCell}
         dbData={selectedDbData}
         category={
-          selectedDbData && 'id' in selectedDbData
-            ? 'main'  // MainPlace has 'id' field
-            : 'food'  // FoodPlace has 'menu' field
+          selectedCellIndex !== null && cellImages?.food[String(selectedCellIndex + 1)]
+            ? 'food'
+            : 'main'
         }
         photos={selectedCell ? (state.main[selectedCell.id]?.photos || []) : []}
         onUpload={handleBottomSheetUpload}
@@ -555,14 +554,14 @@ export default function Home() {
         userId={userId}
         boxNumber={selectedCellIndex !== null ? selectedCellIndex + 1 : undefined}
         foodRestaurants={
-          selectedDbData && 'menu' in selectedDbData
+          selectedCellIndex !== null && cellImages?.food[String(selectedCellIndex + 1)]
             ? foodPlaces
-                .filter(fp => fp.box === (selectedDbData as FoodPlace).box && fp.area === (selectedDbData as FoodPlace).area)
+                .filter(fp => fp.box === String(selectedCellIndex + 1) && fp.area.toLowerCase() === cityId.toLowerCase())
                 .map(fp => ({
                   name: fp.nameEn,
                   nameLocal: fp.nameKr,
                   description: lang === 'en' ? fp.descEn : fp.descKr,
-                  mapQuery: fp.nameEn,
+                  mapUrl: fp.url || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fp.nameEn)}`,
                   imageUrl: fp.imageUrl,
                 }))
             : []
