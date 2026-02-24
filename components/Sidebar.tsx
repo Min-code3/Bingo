@@ -33,6 +33,12 @@ export default function Sidebar() {
           {mounted ? t('sidebar.title') : 'Travel Bingo'}
         </h1>
 
+        {/* Language Selector - Moved to top */}
+        <div className="sidebar-lang">
+          <button className={`lang-option${mounted && lang === 'en' ? ' active' : ''}`} onClick={() => setLang('en')} suppressHydrationWarning>English</button>
+          <button className={`lang-option${mounted && lang === 'ko' ? ' active' : ''}`} onClick={() => setLang('ko')} suppressHydrationWarning>한국어</button>
+        </div>
+
         {/* City Selector */}
         <div className="sidebar-city-selector">
           {Object.values(CITIES).map(city => (
@@ -79,10 +85,6 @@ export default function Sidebar() {
         <button className="reset-btn" onClick={handleReset} suppressHydrationWarning>
           {mounted ? t('sidebar.reset') : 'Reset'}
         </button>
-        <div className="sidebar-lang">
-          <button className={`lang-option${mounted && lang === 'en' ? ' active' : ''}`} onClick={() => setLang('en')} suppressHydrationWarning>English</button>
-          <button className={`lang-option${mounted && lang === 'ko' ? ' active' : ''}`} onClick={() => setLang('ko')} suppressHydrationWarning>한국어</button>
-        </div>
       </aside>
 
       {/* Mobile header */}
@@ -105,6 +107,11 @@ export default function Sidebar() {
       {menuOpen && (
         <div className="mobile-menu-overlay" onClick={() => setMenuOpen(false)}>
           <div className="mobile-menu" onClick={e => e.stopPropagation()}>
+            {/* Language Selector - Moved to top */}
+            <div className="mobile-lang-selector">
+              <button className={`mobile-lang-option${mounted && lang === 'en' ? ' active' : ''}`} onClick={() => setLang('en')} suppressHydrationWarning>English</button>
+              <button className={`mobile-lang-option${mounted && lang === 'ko' ? ' active' : ''}`} onClick={() => setLang('ko')} suppressHydrationWarning>한국어</button>
+            </div>
             <h3 suppressHydrationWarning>{mounted ? t('sidebar.citySelect') : 'Select City'}</h3>
             <div className="mobile-city-selector">
               {Object.values(CITIES).map(city => (
@@ -122,10 +129,6 @@ export default function Sidebar() {
             <button className="mobile-menu-item reset" onClick={() => { handleReset(); setMenuOpen(false); }} suppressHydrationWarning>
               {mounted ? t('sidebar.reset') : 'Reset'}
             </button>
-            <div className="mobile-lang-selector">
-              <button className={`mobile-lang-option${mounted && lang === 'en' ? ' active' : ''}`} onClick={() => setLang('en')} suppressHydrationWarning>English</button>
-              <button className={`mobile-lang-option${mounted && lang === 'ko' ? ' active' : ''}`} onClick={() => setLang('ko')} suppressHydrationWarning>한국어</button>
-            </div>
           </div>
         </div>
       )}

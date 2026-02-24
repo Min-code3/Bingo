@@ -1389,6 +1389,59 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
+/* === LANDING PAGE LANGUAGE SELECTOR === */
+.landing-lang-selector {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  display: flex;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  padding: 6px;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+.landing-lang-option {
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  color: #666;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.landing-lang-option:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #333;
+}
+
+.landing-lang-option.active {
+  background: var(--color-dark-red);
+  color: white;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .landing-lang-selector {
+    top: 16px;
+    right: 16px;
+    padding: 4px;
+    gap: 6px;
+  }
+
+  .landing-lang-option {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+  }
+}
+
 /* === BOTTOM SHEET === */
 .bottom-sheet-overlay {
   position: fixed;

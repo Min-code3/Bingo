@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useCallback } from 'react';
 import { resizeImage } from '@/lib/image-utils';
 import { uploadImageToSupabase } from '@/lib/upload-utils';
 import { logCustomEvent, nowTokyo } from '@/lib/logger';
@@ -24,6 +24,8 @@ export default function MultiPhotoUploadButton({
   const fileRef = useRef<HTMLInputElement>(null);
   const { t, lang } = useI18n();
   const [uploading, setUploading] = useState(false);
+  const [isDebouncing, setIsDebouncing] = useState(false);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -88,16 +90,39 @@ export default function MultiPhotoUploadButton({
     }
   };
 
+  const handleClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    // Prevent clicks during upload or debounce period
+    if (uploading || isDebouncing) return;
+
+    // Set debounce flag
+    setIsDebouncing(true);
+
+    // Clear any existing timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // Reset debounce after 500ms
+    debounceTimerRef.current = setTimeout(() => {
+      setIsDebouncing(false);
+    }, 500);
+
+    fileRef.current?.click();
+  }, [uploading, isDebouncing]);
+
   if (remainingSlots <= 0) return null;
 
   return (
     <button
       className="upload-btn multi-photo-btn"
-      onClick={(e) => {
-        e.stopPropagation();
-        fileRef.current?.click();
+      onClick={handleClick}
+      disabled={uploading || isDebouncing}
+      style={{
+        opacity: uploading || isDebouncing ? 0.6 : 1,
+        cursor: uploading || isDebouncing ? 'not-allowed' : 'pointer',
       }}
-      disabled={uploading}
     >
       <input
         ref={fileRef}
@@ -109,12 +134,32 @@ export default function MultiPhotoUploadButton({
         style={{ display: 'none' }}
       />
       {uploading ? (
-        t('upload.uploading')
+        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{ animation: 'spin 1s linear infinite' }}
+          >
+            <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+          </svg>
+          {t('upload.uploading')}
+        </span>
       ) : (
         lang === 'ko'
           ? `📸 사진 추가 (${remainingSlots}/3)`
           : `📸 Add Photo (${remainingSlots}/3)`
       )}
+      <style jsx>{`
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </button>
   );
 }

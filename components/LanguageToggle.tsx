@@ -1,19 +1,32 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useI18n } from './I18nProvider';
 
 export default function LanguageToggle() {
   const { lang, setLang } = useI18n();
+  const [mounted, setMounted] = useState(false);
 
-  const toggle = () => setLang(lang === 'en' ? 'ko' : 'en');
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
-    <button className="lang-toggle-btn" onClick={toggle} aria-label="Toggle language">
-      <span className="lang-toggle-icon">🌐</span>
-      <span className="lang-toggle-label" suppressHydrationWarning>
-        {lang === 'en' ? 'EN' : 'KO'}
-      </span>
-    </button>
+    <div className="landing-lang-selector">
+      <button
+        className={`landing-lang-option${mounted && lang === 'en' ? ' active' : ''}`}
+        onClick={() => setLang('en')}
+        suppressHydrationWarning
+      >
+        English
+      </button>
+      <button
+        className={`landing-lang-option${mounted && lang === 'ko' ? ' active' : ''}`}
+        onClick={() => setLang('ko')}
+        suppressHydrationWarning
+      >
+        한국어
+      </button>
+    </div>
   );
 }
